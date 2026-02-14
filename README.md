@@ -7,7 +7,7 @@ A workflow-driven system for automated **video enrichment** including:
 - Voiceover generation
 - Chapter detection
 - Metadata extraction
-- AI search vectors
+- Embedding vectors for semantic search
 - Content tagging
 - Structural analysis
 
@@ -45,9 +45,11 @@ The architecture is modular and allows adding new enrichment steps without restr
 ## Application (Single App)
 
 - Next.js (App Router)
-- Node 20
+- Node 20 (project baseline)
 - TypeScript
 - workflow.dev
+
+Note on `@mux/ai`: current `@mux/ai` docs list Node `>=21`. If enabling `@mux/ai` broadly, add a runtime compatibility gate and resolve Node version strategy first.
 
 Worlds:
 - **Local World** → development / Codex Cloud
@@ -64,7 +66,7 @@ No separate orchestration service.
 
 ## AI Provider
 
-- OpenRouter (model gateway)
+- OpenRouter (model gateway, especially for non-Mux-specific paths)
 
 Used for:
 - Transcription
@@ -76,6 +78,12 @@ Used for:
 - Content classification
 
 Models are abstracted behind service adapters to allow swapping providers.
+
+## Mux AI Toolkit
+
+- `@mux/ai/workflows` is the default path for suitable Mux video enrichment jobs.
+- `@mux/ai/primitives` are used as the primary preprocessing layer for transcript/VTT/storyboard/chunking operations.
+- Custom Mux logic is only used for requirements not covered by workflows/primitives.
 
 ---
 
@@ -186,11 +194,11 @@ This layer is optional and modular.
 
 1. Create job
 2. Download video asset
-3. Transcribe via OpenRouter
-4. Generate structured transcript
-5. Extract chapters
+3. Transcribe/process transcript via `@mux/ai/workflows` + `@mux/ai/primitives` (default)
+4. Generate structured transcript artifacts
+5. Extract chapters (prefer `@mux/ai/workflows`)
 6. Extract metadata (topics, tags, summary)
-7. Generate embeddings for search
+7. Generate embeddings for search (prefer `@mux/ai/workflows`)
 8. Translate (optional)
 9. Generate voiceover (optional)
 10. Upload artifacts to Blob/R2
@@ -267,7 +275,7 @@ Optional:
 
 - Uses Local World
 - Stores workflow state as JSON
-- In-memory queue
+- Local process execution loop
 - Dashboard available via Next.js routes
 
 ---
@@ -303,6 +311,49 @@ Dashboard UI reads from workflow state.
 
 ---
 
+# How It Works (Simple Flow)
+
+```text
+[User/API]
+   |
+   v
+POST /api/jobs (muxAssetId, languages, options)
+   |
+   v
+Create job record (status=pending) -> start workflow
+   |
+   v
++------------------------------------------------------+
+| Video Enrichment Workflow                            |
+|                                                      |
+| 1) Preprocess with @mux/ai/primitives (default)     |
+|    - transcript / VTT / cues / chunks               |
+|                                                      |
+| 2) Run suitable @mux/ai/workflows (default)         |
+|    - chapters, embeddings, translation, etc.        |
+|                                                      |
+| 3) Run custom logic only if not covered             |
+|    - OpenRouter path for gaps/special cases         |
+|                                                      |
+| 4) Store artifacts and URLs                          |
+|    - transcript, subtitles, metadata, embeddings     |
+|                                                      |
+| 5) Optional steps                                    |
+|    - upload to Mux                                   |
+|    - notify Strapi CMS                               |
++------------------------------------------------------+
+   |
+   v
+Update job state (step status, retries, errors, artifacts)
+   |
+   v
+GET /api/jobs and GET /api/jobs/:id drive the dashboard
+```
+
+In short: a job is created through the API, the workflow runs with a mux-ai-first approach (`@mux/ai/primitives` + `@mux/ai/workflows`), falls back to custom provider logic only when needed, stores artifacts, and continuously updates job state for dashboard visibility.
+
+---
+
 # Design Principles
 
 - Single deployable application
@@ -334,7 +385,7 @@ Current:
 Future options:
 - Postgres World (if needed)
 - Parallel enrichment pipelines
-- Dedicated vector database
+- Dedicated vector database (if explicitly requested)
 - Multi-language orchestration
 - Artifact versioning and audit trails
 
@@ -345,6 +396,7 @@ Future options:
 This repository implements a modular AI-powered video enrichment platform combining:
 
 - Workflow orchestration (workflow.dev)
+- Mux-native enrichment via `@mux/ai/workflows` + `@mux/ai/primitives`
 - Model abstraction via OpenRouter
 - Media integration via Mux
 - Artifact storage (Blob/R2)

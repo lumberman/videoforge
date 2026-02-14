@@ -1,0 +1,21 @@
+{
+  "language": "en",
+  "text": "Auto transcript for asset test-mux-001. This transcript was generated using a local mock adapter.",
+  "segments": [
+    {
+      "startSec": 0,
+      "endSec": 20,
+      "text": "Introduction for asset test-mux-001"
+    },
+    {
+      "startSec": 20,
+      "endSec": 40,
+      "text": "Main content overview"
+    },
+    {
+      "startSec": 40,
+      "endSec": 60,
+      "text": "Wrap up and next steps"
+    }
+  ]
+}

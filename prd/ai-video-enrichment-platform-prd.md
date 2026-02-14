@@ -73,6 +73,12 @@ The product must support local development, automated testing with Codex Cloud, 
   - Embedding generation
 - Abstract models so they can be swapped.
 
+#### B2. Mux AI Toolkit (Default for Suitable Mux Jobs)
+- Use **`@mux/ai/workflows`** as the default implementation path for suitable Mux video enrichment operations.
+- Use **`@mux/ai/primitives`** as the primary preprocessing layer for transcript/VTT/storyboard/thumbnail/chunking operations.
+- Only implement bespoke Mux enrichment logic when a requirement is not covered by workflows/primitives.
+- Keep all Mux AI usage behind service adapters so implementations remain testable and swappable.
+
 #### C. Artifact Management
 - Artifact storage in Blob/R2:
   - JSON transcripts
@@ -102,6 +108,7 @@ The product must support local development, automated testing with Codex Cloud, 
 - **Reliability:** Workflow state should be durable between process restarts.
 - **Scalability:** Support future backend switch (e.g., Postgres World) if needed.
 - **Security:** Secure API routes and storage access via tokens; no public open writes.
+- **Testability:** Every new feature must include automated tests that run in Codex Cloud without local port binding.
 
 ---
 
@@ -116,7 +123,9 @@ The product must support local development, automated testing with Codex Cloud, 
 
 Workflow Engine -> Workflow.dev World (Local / Vercel)
 |
-+-> OpenRouter (AI models)
++-> @mux/ai/workflows (default for suitable Mux jobs)
++-> @mux/ai/primitives (transcript/media preprocessing)
++-> OpenRouter (provider path where needed)
 +-> Blob / R2 storage
 +-> Mux upload
 +-> Optional Strapi (editorial)
@@ -151,6 +160,7 @@ Response includes:
 - workflow.dev must support Node 20 without issues.
 - Storage provider must persist large JSON and audio.
 - OpenRouter API rate limits and quotas must be respected.
+- `@mux/ai` documented runtime requirements must be validated against project Node runtime before broad rollout.
 
 ---
 
@@ -161,6 +171,8 @@ Response includes:
 | OpenRouter failures | Retry policy, fallback models |
 | Dashboard UI performance | Paginate results, cache queries |
 | Blob storage limits | Validate size, chunk if needed |
+| Node 20 vs `@mux/ai` runtime mismatch | Add explicit compatibility gate before broad adoption |
+| Dual-path complexity (`@mux/ai` + bespoke logic) | Make `@mux/ai/workflows` default and keep bespoke logic only for uncovered cases |
 
 ---
 
@@ -184,6 +196,10 @@ Response includes:
 - Artifacts are visible and accessible via UI links.
 - Editor can modify transcripts in CMS.
 - Deployment on Vercel with Vercel World is successful.
+- For suitable Mux jobs, enrichment defaults to `@mux/ai/workflows`.
+- Transcript/media preprocessing for Mux assets uses `@mux/ai/primitives` first.
+- Runtime compatibility decision for `@mux/ai` is documented and enforced before broad rollout.
+- New feature tests pass in Codex Cloud-compatible mode.
 
 ---
 
@@ -199,5 +215,9 @@ Response includes:
 ### References
 
 - PRD best practices: overview, how to write, structure and alignment of requirements.  [oai_citation:1‡Notion](https://www.notion.com/blog/how-to-write-a-prd?utm_source=chatgpt.com)
+- Mux AI toolkit: https://github.com/muxinc/ai
+- Mux AI workflows docs: https://github.com/muxinc/ai/blob/main/docs/WORKFLOWS.md
+- Mux AI primitives docs: https://github.com/muxinc/ai/blob/main/docs/PRIMITIVES.md
+- Mux AI announcement: https://www.mux.com/blog/video-ai-shouldn-t-be-hard-so-we-built-mux-ai
 
 If you want, I can also generate a task list or issue breakdown format for Codex to execute against this PRD.

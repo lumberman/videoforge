@@ -1,0 +1,319 @@
+{
+  "jobs": [
+    {
+      "id": "job_1719237454084afc9978",
+      "muxAssetId": "test-mux-001",
+      "languages": [
+        "es",
+        "fr"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "completed",
+      "retries": 0,
+      "createdAt": "2026-02-14T11:48:51.378Z",
+      "updatedAt": "2026-02-14T11:48:51.392Z",
+      "artifacts": {
+        "transcript": "/api/artifacts/job_1719237454084afc9978/transcript.json",
+        "subtitlesVtt": "/api/artifacts/job_1719237454084afc9978/subtitles.vtt",
+        "chapters": "/api/artifacts/job_1719237454084afc9978/chapters.json",
+        "metadata": "/api/artifacts/job_1719237454084afc9978/metadata.json",
+        "embeddings": "/api/artifacts/job_1719237454084afc9978/embeddings.json",
+        "translations": "/api/artifacts/job_1719237454084afc9978/translations.json",
+        "artifactManifest": "/api/artifacts/job_1719237454084afc9978/artifacts.json"
+      },
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.385Z",
+          "finishedAt": "2026-02-14T11:48:51.386Z"
+        },
+        {
+          "name": "transcription",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.386Z",
+          "finishedAt": "2026-02-14T11:48:51.386Z"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.387Z",
+          "finishedAt": "2026-02-14T11:48:51.388Z"
+        },
+        {
+          "name": "chapters",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.388Z",
+          "finishedAt": "2026-02-14T11:48:51.388Z"
+        },
+        {
+          "name": "metadata",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.388Z",
+          "finishedAt": "2026-02-14T11:48:51.389Z"
+        },
+        {
+          "name": "embeddings",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.389Z",
+          "finishedAt": "2026-02-14T11:48:51.389Z"
+        },
+        {
+          "name": "translation",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.390Z",
+          "finishedAt": "2026-02-14T11:48:51.390Z"
+        },
+        {
+          "name": "voiceover",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T11:48:51.390Z"
+        },
+        {
+          "name": "artifact_upload",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T11:48:51.390Z",
+          "finishedAt": "2026-02-14T11:48:51.392Z"
+        },
+        {
+          "name": "mux_upload",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T11:48:51.392Z"
+        },
+        {
+          "name": "cms_notify",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T11:48:51.392Z"
+        }
+      ],
+      "errors": [],
+      "startedAt": "2026-02-14T11:48:51.385Z",
+      "completedAt": "2026-02-14T11:48:51.392Z"
+    },
+    {
+      "id": "job_ec24ab277d5946aeb712",
+      "muxAssetId": "smoke-asset-001",
+      "languages": [
+        "es"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "completed",
+      "retries": 0,
+      "createdAt": "2026-02-14T19:14:51.498Z",
+      "updatedAt": "2026-02-14T19:14:51.511Z",
+      "artifacts": {
+        "transcript": "/api/artifacts/job_ec24ab277d5946aeb712/transcript.json",
+        "subtitlesVtt": "/api/artifacts/job_ec24ab277d5946aeb712/subtitles.vtt",
+        "chapters": "/api/artifacts/job_ec24ab277d5946aeb712/chapters.json",
+        "metadata": "/api/artifacts/job_ec24ab277d5946aeb712/metadata.json",
+        "embeddings": "/api/artifacts/job_ec24ab277d5946aeb712/embeddings.json",
+        "translations": "/api/artifacts/job_ec24ab277d5946aeb712/translations.json",
+        "artifactManifest": "/api/artifacts/job_ec24ab277d5946aeb712/artifacts.json"
+      },
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.501Z",
+          "finishedAt": "2026-02-14T19:14:51.502Z"
+        },
+        {
+          "name": "transcription",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.502Z",
+          "finishedAt": "2026-02-14T19:14:51.503Z"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.504Z",
+          "finishedAt": "2026-02-14T19:14:51.504Z"
+        },
+        {
+          "name": "chapters",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.505Z",
+          "finishedAt": "2026-02-14T19:14:51.505Z"
+        },
+        {
+          "name": "metadata",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.506Z",
+          "finishedAt": "2026-02-14T19:14:51.506Z"
+        },
+        {
+          "name": "embeddings",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.507Z",
+          "finishedAt": "2026-02-14T19:14:51.507Z"
+        },
+        {
+          "name": "translation",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.508Z",
+          "finishedAt": "2026-02-14T19:14:51.508Z"
+        },
+        {
+          "name": "voiceover",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:14:51.509Z"
+        },
+        {
+          "name": "artifact_upload",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:14:51.509Z",
+          "finishedAt": "2026-02-14T19:14:51.510Z"
+        },
+        {
+          "name": "mux_upload",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:14:51.511Z"
+        },
+        {
+          "name": "cms_notify",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:14:51.511Z"
+        }
+      ],
+      "errors": [],
+      "currentStep": "artifact_upload",
+      "startedAt": "2026-02-14T19:14:51.501Z",
+      "completedAt": "2026-02-14T19:14:51.511Z"
+    },
+    {
+      "id": "job_079314589359471c9052",
+      "muxAssetId": "smoke-asset-001",
+      "languages": [
+        "es"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "completed",
+      "retries": 0,
+      "createdAt": "2026-02-14T19:15:13.369Z",
+      "updatedAt": "2026-02-14T19:15:13.384Z",
+      "artifacts": {
+        "transcript": "/api/artifacts/job_079314589359471c9052/transcript.json",
+        "subtitlesVtt": "/api/artifacts/job_079314589359471c9052/subtitles.vtt",
+        "chapters": "/api/artifacts/job_079314589359471c9052/chapters.json",
+        "metadata": "/api/artifacts/job_079314589359471c9052/metadata.json",
+        "embeddings": "/api/artifacts/job_079314589359471c9052/embeddings.json",
+        "translations": "/api/artifacts/job_079314589359471c9052/translations.json",
+        "artifactManifest": "/api/artifacts/job_079314589359471c9052/artifacts.json"
+      },
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.372Z",
+          "finishedAt": "2026-02-14T19:15:13.373Z"
+        },
+        {
+          "name": "transcription",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.373Z",
+          "finishedAt": "2026-02-14T19:15:13.374Z"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.375Z",
+          "finishedAt": "2026-02-14T19:15:13.376Z"
+        },
+        {
+          "name": "chapters",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.376Z",
+          "finishedAt": "2026-02-14T19:15:13.376Z"
+        },
+        {
+          "name": "metadata",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.377Z",
+          "finishedAt": "2026-02-14T19:15:13.377Z"
+        },
+        {
+          "name": "embeddings",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.378Z",
+          "finishedAt": "2026-02-14T19:15:13.378Z"
+        },
+        {
+          "name": "translation",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.379Z",
+          "finishedAt": "2026-02-14T19:15:13.379Z"
+        },
+        {
+          "name": "voiceover",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:15:13.380Z"
+        },
+        {
+          "name": "artifact_upload",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-14T19:15:13.380Z",
+          "finishedAt": "2026-02-14T19:15:13.382Z"
+        },
+        {
+          "name": "mux_upload",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:15:13.383Z"
+        },
+        {
+          "name": "cms_notify",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-14T19:15:13.383Z"
+        }
+      ],
+      "errors": [],
+      "currentStep": "artifact_upload",
+      "startedAt": "2026-02-14T19:15:13.371Z",
+      "completedAt": "2026-02-14T19:15:13.384Z"
+    }
+  ]
+}

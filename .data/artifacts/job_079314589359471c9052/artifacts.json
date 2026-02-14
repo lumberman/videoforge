@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-02-14T19:15:13.381Z",
+  "artifacts": {
+    "transcript": "/api/artifacts/job_079314589359471c9052/transcript.json",
+    "subtitlesVtt": "/api/artifacts/job_079314589359471c9052/subtitles.vtt",
+    "chapters": "/api/artifacts/job_079314589359471c9052/chapters.json",
+    "metadata": "/api/artifacts/job_079314589359471c9052/metadata.json",
+    "embeddings": "/api/artifacts/job_079314589359471c9052/embeddings.json",
+    "translations": "/api/artifacts/job_079314589359471c9052/translations.json"
+  },
+  "sourceLanguage": "en"
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Chapter 1",
+    "startSec": 0,
+    "endSec": 20
+  },
+  {
+    "title": "Chapter 2",
+    "startSec": 20,
+    "endSec": 40
+  },
+  {
+    "title": "Chapter 3",
+    "startSec": 40,
+    "endSec": 60
+  }
+]

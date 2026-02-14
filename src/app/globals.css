@@ -1,0 +1,120 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #4b5563;
+  --border: #d1d5db;
+  --ok: #0f766e;
+  --warn: #b45309;
+  --error: #b91c1c;
+  --accent: #1d4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+  color: var(--text);
+  background: linear-gradient(145deg, #eef2ff 0%, var(--bg) 45%, #eefbf7 100%);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .grid.cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badge.pending {
+  color: #1e3a8a;
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.badge.running {
+  color: #92400e;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.badge.completed {
+  color: #065f46;
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+.badge.failed {
+  color: #991b1b;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.badge.skipped {
+  color: #334155;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 8px;
+  vertical-align: top;
+}
+
+.small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+code {
+  font-family: "IBM Plex Mono", "Menlo", monospace;
+}
