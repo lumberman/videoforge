@@ -45,11 +45,11 @@ The architecture is modular and allows adding new enrichment steps without restr
 ## Application (Single App)
 
 - Next.js (App Router)
-- Node 20 (project baseline)
+- Node 21+ (Node 22 supported)
 - TypeScript
 - workflow.dev
 
-Note on `@mux/ai`: current `@mux/ai` docs list Node `>=21`. If enabling `@mux/ai` broadly, add a runtime compatibility gate and resolve Node version strategy first.
+Note on `@mux/ai`: the package requires Node `>=21`. In Codex Cloud you can pin Node `22.x`.
 
 Worlds:
 - **Local World** → development / Codex Cloud
@@ -69,21 +69,18 @@ No separate orchestration service.
 - OpenRouter (model gateway, especially for non-Mux-specific paths)
 
 Used for:
-- Transcription
-- Translation
 - Text-to-Speech
-- Metadata extraction
-- Chapter detection
-- Embedding generation
+- Non-Mux enrichment paths when explicitly configured
 - Content classification
 
 Models are abstracted behind service adapters to allow swapping providers.
 
 ## Mux AI Toolkit
 
-- `@mux/ai/workflows` is the default path for suitable Mux video enrichment jobs.
+- `@mux/ai/workflows` is the default and required path for suitable Mux video enrichment jobs.
 - `@mux/ai/primitives` are used as the primary preprocessing layer for transcript/VTT/storyboard/chunking operations.
 - Custom Mux logic is only used for requirements not covered by workflows/primitives.
+- Core mux-ai failures are surfaced as structured job errors (`code`, `operatorHint`) with deterministic failed status.
 
 ---
 
@@ -241,7 +238,7 @@ Steps are composable and can be extended without changing core architecture.
 
 ## Requirements
 
-- Node 20+
+- Node 21+ (recommended: Node 22.x in Codex Cloud)
 - npm or pnpm
 - OpenRouter API key
 - Mux credentials
@@ -271,12 +268,43 @@ Optional:
 
 ## Run (Local World)
 
-    npm run dev
+    pnpm dev
 
 - Uses Local World
 - Stores workflow state as JSON
 - Local process execution loop
 - Dashboard available via Next.js routes
+- mux-ai is the default and required integration path.
+
+## Test Commands
+
+    pnpm typecheck
+    pnpm test
+    pnpm test:smoke
+
+## Operator Runbook
+
+1. Create a job from `/dashboard/jobs` or `POST /api/jobs`.
+2. Watch status and step transitions in `/dashboard/jobs/[id]`.
+3. Validate generated artifacts from the Artifacts section links.
+4. For optional integrations:
+   - `uploadMux=true` should produce `muxUpload` artifact URL.
+   - `notifyCms=true` should complete `cms_notify` step even when Strapi is not configured (sync result is non-blocking).
+
+### Troubleshooting
+
+- Job stuck/failing:
+  - inspect `/videoforge/.data/jobs.json`
+  - inspect `/videoforge/.data/artifacts/<jobId>/`
+  - verify API response from `GET /api/jobs/:id` includes `errors` and `currentStep`
+  - check `errors[].code` and `errors[].operatorHint` for dependency-level diagnostics
+- Artifact route returns `400`:
+  - confirm artifact URL path is not empty and does not include traversal segments
+- Mux AI path not active:
+  - verify `@mux/ai` is installed and configured
+  - verify runtime is Node 21+ (`node -v`)
+  - in Codex Cloud, pin Node `22.x` if you want a fixed runtime
+  - expect deterministic job failure with `MUX_AI_*` error codes when credentials/import/runtime are invalid
 
 ---
 
@@ -332,8 +360,8 @@ Create job record (status=pending) -> start workflow
 | 2) Run suitable @mux/ai/workflows (default)         |
 |    - chapters, embeddings, translation, etc.        |
 |                                                      |
-| 3) Run custom logic only if not covered             |
-|    - OpenRouter path for gaps/special cases         |
+| 3) Run non-Mux optional adapters where required     |
+|    - voiceover / downstream integrations            |
 |                                                      |
 | 4) Store artifacts and URLs                          |
 |    - transcript, subtitles, metadata, embeddings     |
@@ -350,7 +378,7 @@ Update job state (step status, retries, errors, artifacts)
 GET /api/jobs and GET /api/jobs/:id drive the dashboard
 ```
 
-In short: a job is created through the API, the workflow runs with a mux-ai-first approach (`@mux/ai/primitives` + `@mux/ai/workflows`), falls back to custom provider logic only when needed, stores artifacts, and continuously updates job state for dashboard visibility.
+In short: a job is created through the API, the workflow runs with a mux-ai-first required path (`@mux/ai/primitives` + `@mux/ai/workflows`) for core Mux enrichment, stores artifacts, and continuously updates job state for dashboard visibility. When mux-ai is unavailable, jobs fail predictably with structured operator diagnostics instead of crashing the process.
 
 ---
 

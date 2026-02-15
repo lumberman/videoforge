@@ -1,4 +1,5 @@
 import {
+  appendJobError,
   getJobById,
   mergeArtifacts,
   setJobStatus,
@@ -14,6 +15,7 @@ import {
   storeJsonArtifact,
   storeTextArtifact
 } from '@/services/storage';
+import { isMuxAiError, preprocessMuxAssetWithPrimitives } from '@/services/mux-ai';
 import { transcribeVideo } from '@/services/transcription';
 import { translateTranscript } from '@/services/translation';
 import { createVoiceover } from '@/services/voiceover';
@@ -25,7 +27,31 @@ import type {
   Transcript,
   TranslationResult
 } from '@/types/enrichment';
-import type { WorkflowStepName } from '@/types/job';
+import type { JobErrorDetails, WorkflowStepName } from '@/types/job';
+
+function toJobErrorDetails(error: unknown): JobErrorDetails | undefined {
+  if (!isMuxAiError(error)) {
+    return undefined;
+  }
+
+  return {
+    code: error.code,
+    operatorHint: error.operatorHint,
+    isDependencyError: error.isDependencyError
+  };
+}
+
+function isRetryableStepError(error: unknown): boolean {
+  if (!isMuxAiError(error)) {
+    return true;
+  }
+
+  return !(
+    error.code === 'MUX_AI_CONFIG_MISSING' ||
+    error.code === 'MUX_AI_IMPORT_FAILED' ||
+    error.code === 'MUX_AI_INVALID_RESPONSE'
+  );
+}
 
 function toVtt(transcript: Transcript): string {
   const lines = ['WEBVTT', ''];
@@ -87,11 +113,19 @@ async function runStep<T>(opts: {
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : 'Unknown step failure';
+      const errorDetails = toJobErrorDetails(error);
+      const shouldRetry =
+        isRetryableStepError(error) && attempt < maxRetries;
       await updateStepStatus(opts.jobId, opts.step, 'failed', {
         error: message,
-        incrementRetry: attempt < maxRetries
+        incrementRetry: shouldRetry,
+        errorDetails
       });
       await opts.world.onStepUpdate(opts.jobId, opts.step, 'failed');
+
+      if (!shouldRetry) {
+        break;
+      }
     }
   }
 
@@ -128,12 +162,29 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       throw new Error('Transcript generation did not produce output.');
     }
 
+    const primitivePreprocess = await preprocessMuxAssetWithPrimitives(
+      job.muxAssetId,
+      transcript
+    );
+    if (primitivePreprocess.warnings.length > 0) {
+      for (const warning of primitivePreprocess.warnings) {
+        console.warn(
+          `[workflow][mux-ai-preprocess] ${warning.code}: ${warning.message} (${warning.operatorHint})`
+        );
+      }
+    }
+
     const transcriptUrl = await storeJsonArtifact(jobId, 'transcript.json', transcript);
     const vttUrl = await runStep({
       jobId,
       step: 'structured_transcript',
       world,
-      task: async () => storeTextArtifact(jobId, 'subtitles.vtt', toVtt(transcript))
+      task: async () =>
+        storeTextArtifact(
+          jobId,
+          'subtitles.vtt',
+          primitivePreprocess.vtt ?? toVtt(transcript)
+        )
     });
 
     const chapters = await runStep({
@@ -189,7 +240,9 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
           metadata,
           embeddings,
           translations,
-          voiceoverUrl
+          voiceoverUrl,
+          primitiveStoryboard: primitivePreprocess.storyboard,
+          primitiveChunks: primitivePreprocess.chunks
         })
     });
 
@@ -234,7 +287,14 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
 
     await setJobStatus(jobId, 'completed');
     await world.onJobComplete(jobId, 'completed');
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown workflow orchestration failure.';
+    const errorDetails = toJobErrorDetails(error);
+    const latest = await getJobById(jobId);
+    const step = latest?.currentStep ?? 'download_video';
+    await appendJobError(jobId, step, message, errorDetails, { dedupeLast: true });
+
     await setJobStatus(jobId, 'failed');
     await world.onJobComplete(jobId, 'failed');
   }
@@ -251,6 +311,8 @@ async function uploadAllArtifacts(
     embeddings?: EmbeddingVector[];
     translations?: TranslationResult[];
     voiceoverUrl?: string;
+    primitiveStoryboard?: Record<string, unknown> | unknown[];
+    primitiveChunks?: unknown[];
   }
 ): Promise<Record<string, string>> {
   const urls: Record<string, string> = {
@@ -287,6 +349,18 @@ async function uploadAllArtifacts(
 
   if (payload.voiceoverUrl) {
     urls.voiceover = payload.voiceoverUrl;
+  }
+
+  if (payload.primitiveStoryboard) {
+    urls.storyboard = await storeJsonArtifact(
+      jobId,
+      'storyboard.json',
+      payload.primitiveStoryboard
+    );
+  }
+
+  if (payload.primitiveChunks && payload.primitiveChunks.length > 0) {
+    urls.chunks = await storeJsonArtifact(jobId, 'chunks.json', payload.primitiveChunks);
   }
 
   const summary = {

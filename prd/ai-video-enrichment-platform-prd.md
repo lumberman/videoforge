@@ -104,7 +104,7 @@ The product must support local development, automated testing with Codex Cloud, 
 
 ### 5. Non-Functional Requirements
 
-- **Compatibility:** Must run on Node 20 without conflicts with workflow.dev or integrations.
+- **Compatibility:** Must run on Node 21+ without conflicts with workflow.dev or integrations.
 - **Reliability:** Workflow state should be durable between process restarts.
 - **Scalability:** Support future backend switch (e.g., Postgres World) if needed.
 - **Security:** Secure API routes and storage access via tokens; no public open writes.
@@ -157,7 +157,7 @@ Response includes:
 
 ### 8. Constraints & Dependencies
 
-- workflow.dev must support Node 20 without issues.
+- workflow.dev must support Node 21+ without issues.
 - Storage provider must persist large JSON and audio.
 - OpenRouter API rate limits and quotas must be respected.
 - `@mux/ai` documented runtime requirements must be validated against project Node runtime before broad rollout.
@@ -171,7 +171,7 @@ Response includes:
 | OpenRouter failures | Retry policy, fallback models |
 | Dashboard UI performance | Paginate results, cache queries |
 | Blob storage limits | Validate size, chunk if needed |
-| Node 20 vs `@mux/ai` runtime mismatch | Add explicit compatibility gate before broad adoption |
+| Runtime drift between environments | Pin runtime in environment settings (recommended: Node 22.x in Codex Cloud) and enforce `engines.node >=21` |
 | Dual-path complexity (`@mux/ai` + bespoke logic) | Make `@mux/ai/workflows` default and keep bespoke logic only for uncovered cases |
 
 ---
@@ -200,6 +200,33 @@ Response includes:
 - Transcript/media preprocessing for Mux assets uses `@mux/ai/primitives` first.
 - Runtime compatibility decision for `@mux/ai` is documented and enforced before broad rollout.
 - New feature tests pass in Codex Cloud-compatible mode.
+
+---
+
+### 11.1 Implementation Decisions (2026-02-14)
+
+- Simplified mux-ai adoption policy:
+  - `@mux/ai` is a required dependency for mux-enrichment execution paths
+  - Runtime requirement is enforced by tooling/config (`engines.node >=21`) with optional Node `22.x` pinning in Codex Cloud
+  - Core mux-enrichment steps fail predictably with structured dependency errors when mux runtime/config/import is unavailable (no silent fallback success path)
+- Integrated mux-ai access through existing service entry points:
+  - `/videoforge/src/services/transcription.ts`
+  - `/videoforge/src/services/chapters.ts`
+  - `/videoforge/src/services/metadata.ts`
+  - `/videoforge/src/services/embeddings.ts`
+  - `/videoforge/src/services/translation.ts`
+- Added primitives-first preprocessing hook for transcript/media-derived artifacts (VTT/storyboard/chunks) with non-fatal warnings for optional artifacts.
+- Strengthened deterministic behavior and observability:
+  - strict API payload validation for `POST /api/jobs`
+  - hardened artifact-path sanitization in `GET /api/artifacts/...`
+  - workflow catch-path now appends terminal orchestration errors without losing `currentStep`
+  - job errors now include additive structured metadata (`code`, `operatorHint`, `isDependencyError`) for operators
+- Added Codex-Cloud-safe automated tests for:
+  - mux-ai adapter contract behavior (including config/import failures)
+  - workflow/job-state transitions and optional paths
+  - API contracts (`/api/jobs`, `/api/jobs/:id`, `/api/artifacts/...`)
+  - dashboard list/detail rendering and form parsing helpers
+  - adapter-level mocking strategy for deterministic unit tests without live mux runtime
 
 ---
 

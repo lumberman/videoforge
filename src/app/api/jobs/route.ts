@@ -20,10 +20,43 @@ function parsePayload(input: unknown): JobCreatePayload {
     throw new Error('languages is required and must be an array.');
   }
 
+  if (body.languages.some((lang) => typeof lang !== 'string')) {
+    throw new Error('languages must contain only strings.');
+  }
+
+  if (
+    body.options !== undefined &&
+    (typeof body.options !== 'object' || body.options === null || Array.isArray(body.options))
+  ) {
+    throw new Error('options must be an object when provided.');
+  }
+
+  const normalizeBoolean = (value: unknown, field: string) => {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (typeof value !== 'boolean') {
+      throw new Error(`${field} must be a boolean when provided.`);
+    }
+    return value;
+  };
+
+  const muxAssetId = body.muxAssetId.trim();
+  if (!muxAssetId) {
+    throw new Error('muxAssetId cannot be empty.');
+  }
+
   return {
-    muxAssetId: body.muxAssetId,
-    languages: body.languages.filter((lang): lang is string => typeof lang === 'string'),
-    options: body.options ?? {}
+    muxAssetId,
+    languages: [...new Set(body.languages.map((lang) => lang.trim()).filter(Boolean))],
+    options: {
+      generateVoiceover: normalizeBoolean(
+        body.options?.generateVoiceover,
+        'options.generateVoiceover'
+      ),
+      uploadMux: normalizeBoolean(body.options?.uploadMux, 'options.uploadMux'),
+      notifyCms: normalizeBoolean(body.options?.notifyCms, 'options.notifyCms')
+    }
   };
 }
 

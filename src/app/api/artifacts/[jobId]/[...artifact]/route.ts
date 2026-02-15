@@ -10,7 +10,7 @@ const MIME_BY_EXT: Record<string, string> = {
 };
 
 function sanitizeSegment(segment: string): string {
-  return segment.replace(/\.\./g, '').replace(/\//g, '_');
+  return segment.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 export async function GET(
@@ -18,12 +18,30 @@ export async function GET(
   context: { params: Promise<{ jobId: string; artifact: string[] }> }
 ) {
   const { jobId, artifact } = await context.params;
+  if (!Array.isArray(artifact) || artifact.length === 0) {
+    return new Response('Artifact path is required.', { status: 400 });
+  }
+  if (
+    jobId.includes('..') ||
+    artifact.some(
+      (segment) =>
+        segment.includes('..') || segment.includes('/') || segment.includes('\\')
+    )
+  ) {
+    return new Response('Invalid artifact path.', { status: 400 });
+  }
+
   const safeJobId = sanitizeSegment(jobId);
-  const joined = artifact.map(sanitizeSegment).join('_');
+  const segments = artifact.map(sanitizeSegment).filter(Boolean);
+  if (segments.length === 0) {
+    return new Response('Artifact path is required.', { status: 400 });
+  }
+
+  const joined = segments.join('_');
   const root = path.resolve(env.artifactRootPath, safeJobId);
   const artifactPath = path.resolve(root, joined);
 
-  if (!artifactPath.startsWith(root)) {
+  if (artifactPath === root || !artifactPath.startsWith(root)) {
     return new Response('Invalid artifact path.', { status: 400 });
   }
 

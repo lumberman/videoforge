@@ -11,33 +11,25 @@ export interface WorkflowWorld {
 class LocalWorld implements WorkflowWorld {
   mode: WorldMode = 'local';
 
-  async onJobStart(_jobId: string): Promise<void> {}
+  async onJobStart(): Promise<void> {}
 
-  async onStepUpdate(
-    _jobId: string,
-    _step: WorkflowStepName,
-    _status: StepStatus
-  ): Promise<void> {}
+  async onStepUpdate(): Promise<void> {}
 
-  async onJobComplete(_jobId: string, _status: 'completed' | 'failed'): Promise<void> {}
+  async onJobComplete(): Promise<void> {}
 }
 
 class VercelWorld implements WorkflowWorld {
   mode: WorldMode = 'vercel';
 
-  async onJobStart(_jobId: string): Promise<void> {
+  async onJobStart(): Promise<void> {
     // Placeholder for workflow.dev Vercel world integration.
   }
 
-  async onStepUpdate(
-    _jobId: string,
-    _step: WorkflowStepName,
-    _status: StepStatus
-  ): Promise<void> {
+  async onStepUpdate(): Promise<void> {
     // Placeholder for workflow.dev Vercel world integration.
   }
 
-  async onJobComplete(_jobId: string, _status: 'completed' | 'failed'): Promise<void> {
+  async onJobComplete(): Promise<void> {
     // Placeholder for workflow.dev Vercel world integration.
   }
 }

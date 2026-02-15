@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getJobById } from '@/data/job-store';
@@ -146,7 +147,9 @@ export default async function JobDetailPage({
               <tr>
                 <th>Time</th>
                 <th>Step</th>
+                <th>Code</th>
                 <th>Message</th>
+                <th>Operator Hint</th>
               </tr>
             </thead>
             <tbody>
@@ -154,7 +157,9 @@ export default async function JobDetailPage({
                 <tr key={`${error.at}-${idx}`}>
                   <td>{formatDate(error.at)}</td>
                   <td>{formatStepName(error.step)}</td>
+                  <td>{error.code ?? 'n/a'}</td>
                   <td>{error.message}</td>
+                  <td>{error.operatorHint ?? 'n/a'}</td>
                 </tr>
               ))}
             </tbody>

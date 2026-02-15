@@ -1,5 +1,5 @@
-import { openRouter } from '@/services/openrouter';
+import { embeddingsWithMuxAi } from '@/services/mux-ai';
 
 export async function generateEmbeddings(text: string) {
-  return openRouter.createEmbeddings(text);
+  return embeddingsWithMuxAi(text);
 }

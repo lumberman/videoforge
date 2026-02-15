@@ -9,9 +9,12 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts tests/**/*.test.tsx",
+    "test:contracts": "tsx --test tests/api-jobs-contract.test.ts tests/api-artifacts-route.test.ts",
     "test:smoke": "tsx --test tests/api-smoke.test.ts"
   },
   "dependencies": {
+    "@mux/ai": "^0.7.3",
     "next": "15.1.0",
     "react": "19.0.0",
     "react-dom": "19.0.0"
@@ -26,6 +29,6 @@
     "typescript": "5.7.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=21"
   }
 }

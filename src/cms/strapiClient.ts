@@ -6,6 +6,8 @@ export async function syncArtifactsToStrapi(opts: {
   artifacts: Record<string, string>;
   metadataUrl?: string;
 }): Promise<{ synced: boolean; reason?: string }> {
+  void opts;
+
   if (!env.strapiEndpoint || !env.strapiApiToken) {
     return {
       synced: false,

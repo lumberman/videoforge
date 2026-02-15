@@ -1,4 +1,4 @@
-import { openRouter } from '@/services/openrouter';
+import { translateWithMuxAi } from '@/services/mux-ai';
 import type { Transcript, TranslationResult } from '@/types/enrichment';
 
 export async function translateTranscript(
@@ -7,7 +7,7 @@ export async function translateTranscript(
 ): Promise<TranslationResult[]> {
   const unique = [...new Set(languages.filter(Boolean))];
   const translations = await Promise.all(
-    unique.map((language) => openRouter.translate(transcript, language))
+    unique.map((language) => translateWithMuxAi(transcript, language))
   );
   return translations;
 }

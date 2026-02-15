@@ -1,5 +1,5 @@
-import { openRouter } from '@/services/openrouter';
+import { transcribeWithMuxAi } from '@/services/mux-ai';
 
 export async function transcribeVideo(muxAssetId: string) {
-  return openRouter.transcribe(muxAssetId);
+  return transcribeWithMuxAi(muxAssetId);
 }

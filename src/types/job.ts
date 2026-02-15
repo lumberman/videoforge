@@ -41,10 +41,19 @@ export interface JobStepState {
   error?: string;
 }
 
+export interface JobErrorDetails {
+  code?: string;
+  operatorHint?: string;
+  isDependencyError?: boolean;
+}
+
 export interface JobError {
   step: WorkflowStepName;
   message: string;
   at: string;
+  code?: string;
+  operatorHint?: string;
+  isDependencyError?: boolean;
 }
 
 export interface JobRecord {

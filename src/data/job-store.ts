@@ -4,6 +4,7 @@ import { updateJsonFile, readJsonFile } from '@/lib/json-store';
 import { buildInitialSteps } from '@/lib/workflow-steps';
 import type {
   JobCreatePayload,
+  JobErrorDetails,
   JobError,
   JobRecord,
   JobsDb,
@@ -94,7 +95,7 @@ export async function updateStepStatus(
   jobId: string,
   step: WorkflowStepName,
   status: StepStatus,
-  opts?: { error?: string; incrementRetry?: boolean }
+  opts?: { error?: string; incrementRetry?: boolean; errorDetails?: JobErrorDetails }
 ): Promise<void> {
   await mutateJob(jobId, (job) => {
     const now = new Date().toISOString();
@@ -107,7 +108,14 @@ export async function updateStepStatus(
 
     const nextErrors: JobError[] = [...job.errors];
     if (opts?.error) {
-      nextErrors.push({ step, message: opts.error, at: now });
+      nextErrors.push({
+        step,
+        message: opts.error,
+        at: now,
+        code: opts.errorDetails?.code,
+        operatorHint: opts.errorDetails?.operatorHint,
+        isDependencyError: opts.errorDetails?.isDependencyError
+      });
     }
 
     return {
@@ -152,4 +160,46 @@ export async function mergeArtifacts(
     },
     updatedAt: new Date().toISOString()
   }));
+}
+
+export async function appendJobError(
+  jobId: string,
+  step: WorkflowStepName,
+  message: string,
+  details?: JobErrorDetails,
+  opts?: { dedupeLast?: boolean }
+): Promise<void> {
+  await mutateJob(jobId, (job) => {
+    const now = new Date().toISOString();
+    const lastError = job.errors.at(-1);
+    const shouldSkip =
+      opts?.dedupeLast &&
+      !!lastError &&
+      lastError.step === step &&
+      lastError.message === message &&
+      lastError.code === details?.code;
+
+    if (shouldSkip) {
+      return {
+        ...job,
+        updatedAt: now
+      };
+    }
+
+    return {
+      ...job,
+      errors: [
+        ...job.errors,
+        {
+          step,
+          message,
+          at: now,
+          code: details?.code,
+          operatorHint: details?.operatorHint,
+          isDependencyError: details?.isDependencyError
+        }
+      ],
+      updatedAt: now
+    };
+  });
 }

@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { listJobs } from '@/data/job-store';
 import { getRuntimeWarnings } from '@/config/env';
@@ -55,6 +56,7 @@ export default async function JobsPage() {
                 <th>Status</th>
                 <th>Current step</th>
                 <th>Retries</th>
+                <th>Latest error</th>
                 <th>Created</th>
                 <th>Details</th>
               </tr>
@@ -71,6 +73,7 @@ export default async function JobsPage() {
                   </td>
                   <td>{job.currentStep ? formatStepName(job.currentStep) : 'n/a'}</td>
                   <td>{job.retries}</td>
+                  <td>{job.errors.at(-1)?.message ?? 'n/a'}</td>
                   <td>{formatDate(job.createdAt)}</td>
                   <td>
                     <Link href={`/dashboard/jobs/${job.id}`}>Open</Link>

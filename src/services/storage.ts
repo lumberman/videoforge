@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { env } from '@/config/env';
 
 function sanitizeName(name: string): string {
-  return name.replace(/\.\./g, '').replace(/\//g, '_');
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 async function writeArtifact(
@@ -12,11 +12,12 @@ async function writeArtifact(
   value: string | Uint8Array
 ): Promise<string> {
   const safeName = sanitizeName(artifactName);
-  const dir = path.join(env.artifactRootPath, jobId);
+  const safeJobId = sanitizeName(jobId);
+  const dir = path.join(env.artifactRootPath, safeJobId);
   await mkdir(dir, { recursive: true });
   const filePath = path.join(dir, safeName);
   await writeFile(filePath, value);
-  return `/api/artifacts/${encodeURIComponent(jobId)}/${encodeURIComponent(safeName)}`;
+  return `/api/artifacts/${encodeURIComponent(safeJobId)}/${encodeURIComponent(safeName)}`;
 }
 
 export async function storeJsonArtifact(

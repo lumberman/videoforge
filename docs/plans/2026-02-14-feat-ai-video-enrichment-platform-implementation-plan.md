@@ -1,7 +1,7 @@
 ---
 title: "feat: AI Video Enrichment Platform implementation"
 type: feat
-status: active
+status: completed
 date: 2026-02-14
 ---
 
@@ -11,24 +11,24 @@ date: 2026-02-14
 
 Deliver a production-ready, single-app Next.js platform that orchestrates AI video enrichment workflows, exposes job status and artifacts via API/UI, and runs consistently in both local/Codex Cloud (`WORKFLOW_WORLD=local`) and production (`WORKFLOW_WORLD=vercel`).
 
-This plan converts the PRD in `/Users/o/GitHub/videoforge/prd/ai-video-enrichment-platform-prd.md` into implementation phases with explicit quality gates and test requirements.
+This plan converts the PRD in `/videoforge/prd/ai-video-enrichment-platform-prd.md` into implementation phases with explicit quality gates and test requirements.
 
 ## Research Summary
 
 ### Local Findings
 
 - Existing implementation already includes core scaffolding:
-  - workflow orchestration: `/Users/o/GitHub/videoforge/src/workflows/videoEnrichment.ts`
-  - job persistence: `/Users/o/GitHub/videoforge/src/data/job-store.ts`
-  - API routes: `/Users/o/GitHub/videoforge/src/app/api/jobs/route.ts`, `/Users/o/GitHub/videoforge/src/app/api/jobs/[id]/route.ts`
-  - artifact route: `/Users/o/GitHub/videoforge/src/app/api/artifacts/[jobId]/[...artifact]/route.ts`
-  - dashboard routes: `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/page.tsx`, `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/[id]/page.tsx`
-- Project constraints in `/Users/o/GitHub/videoforge/AGENTS.md` require:
+  - workflow orchestration: `/videoforge/src/workflows/videoEnrichment.ts`
+  - job persistence: `/videoforge/src/data/job-store.ts`
+  - API routes: `/videoforge/src/app/api/jobs/route.ts`, `/videoforge/src/app/api/jobs/[id]/route.ts`
+  - artifact route: `/videoforge/src/app/api/artifacts/[jobId]/[...artifact]/route.ts`
+  - dashboard routes: `/videoforge/src/app/dashboard/jobs/page.tsx`, `/videoforge/src/app/dashboard/jobs/[id]/page.tsx`
+- Project constraints in `/videoforge/AGENTS.md` require:
   - no added infrastructure (DB/queues/microservices)
   - tests for every new feature
   - tests runnable in Codex Cloud without local port binding
 - Institutional learning captured:
-  - `/Users/o/GitHub/videoforge/docs/solutions/logic-errors/pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md`
+  - `/videoforge/docs/solutions/logic-errors/pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md`
   - Key lesson: keep startup state transitions inside guarded error paths and fail loudly on malformed persistence data.
 
 ### External Research Decision
@@ -37,7 +37,7 @@ External research was completed for Mux AI adoption:
 
 - `@mux/ai/workflows` provides prebuilt workflow functions and states they are compatible with Workflow DevKit via `"use workflow"`/`"use step"` directives.
 - `@mux/ai/primitives` provides low-level transcript/image/chunking utilities and all workflows are composed from these primitives.
-- `@mux/ai` README lists Node.js prerequisite as `>= 21.0.0`, which conflicts with current project requirement of Node 20 and must be resolved before full adoption.
+- `@mux/ai` README lists Node.js prerequisite as `>= 21.0.0`; runtime policy should be aligned to Node 21+ (Node 22 supported/pinnable in Codex Cloud).
 - Mux blog positioning: reduce video-AI integration complexity by using packaged workflows/primitives instead of custom glue code.
 
 ## Problem Statement / Motivation
@@ -100,18 +100,18 @@ Goal: adopt Mux-maintained workflows/primitives as the primary implementation an
 
 Tasks:
 
-- [ ] Add a dependency compatibility gate in `/Users/o/GitHub/videoforge/package.json` planning notes:
-  - validate whether runtime can move from Node 20 to Node 21+ for `@mux/ai`
-  - if Node 20 must remain, define a pinned fallback strategy and compatibility tests before rollout
-- [ ] Wire `@mux/ai/workflows` directly into existing service entry points first:
-  - `/Users/o/GitHub/videoforge/src/services/transcription.ts`
-  - `/Users/o/GitHub/videoforge/src/services/chapters.ts`
-  - `/Users/o/GitHub/videoforge/src/services/embeddings.ts`
-  - `/Users/o/GitHub/videoforge/src/services/translation.ts`
-- [ ] Use `@mux/ai/primitives` as the default preprocessing layer for every Mux video path (transcript/VTT/storyboard/chunking) before any custom logic
-- [ ] Only introduce `/Users/o/GitHub/videoforge/src/services/mux-ai/` if duplication appears after integrating existing service entry points
-- [ ] Add feature flag in env/config for controlled rollout: `MUX_AI_ENABLED=true|false`
-- [ ] Add contract tests in `tests/mux-ai-adapter.test.ts` (new file) with mocked Mux inputs
+- [x] Add a runtime policy update in `/videoforge/package.json` planning notes:
+  - validate runtime policy alignment to Node 21+ for `@mux/ai`
+  - define environment pinning strategy (Node 22 supported in Codex Cloud)
+- [x] Wire `@mux/ai/workflows` directly into existing service entry points first:
+  - `/videoforge/src/services/transcription.ts`
+  - `/videoforge/src/services/chapters.ts`
+  - `/videoforge/src/services/embeddings.ts`
+  - `/videoforge/src/services/translation.ts`
+- [x] Use `@mux/ai/primitives` as the default preprocessing layer for every Mux video path (transcript/VTT/storyboard/chunking) before any custom logic
+- [x] Only introduce `/videoforge/src/services/mux-ai/` if duplication appears after integrating existing service entry points
+- [x] Add `@mux/ai` as an explicit dependency and runtime policy guard (`engines.node >=21`)
+- [x] Add contract tests in `tests/mux-ai-adapter.test.ts` (new file) with mocked Mux inputs
 
 Deliverables:
 
@@ -124,10 +124,10 @@ Goal: lock down workflow/job-state correctness and error handling.
 
 Tasks:
 
-- [ ] Validate workflow startup and terminal transitions in `/Users/o/GitHub/videoforge/src/workflows/videoEnrichment.ts`
-- [ ] Ensure `currentStep`, retries, and error logs remain consistent in `/Users/o/GitHub/videoforge/src/data/job-store.ts`
-- [ ] Keep JSON persistence fail-fast on corruption in `/Users/o/GitHub/videoforge/src/lib/json-store.ts`
-- [ ] Add/expand deterministic helper coverage in `tests/workflow-state.test.ts` (new file)
+- [x] Validate workflow startup and terminal transitions in `/videoforge/src/workflows/videoEnrichment.ts`
+- [x] Ensure `currentStep`, retries, and error logs remain consistent in `/videoforge/src/data/job-store.ts`
+- [x] Keep JSON persistence fail-fast on corruption in `/videoforge/src/lib/json-store.ts`
+- [x] Add/expand deterministic helper coverage in `tests/workflow-state.test.ts` (new file)
 
 Deliverables:
 
@@ -140,10 +140,10 @@ Goal: make job/artifact endpoints robust and contract-tested.
 
 Tasks:
 
-- [ ] Assert request validation and response schemas in `/Users/o/GitHub/videoforge/src/app/api/jobs/route.ts`
-- [ ] Assert 404 behavior and response shape in `/Users/o/GitHub/videoforge/src/app/api/jobs/[id]/route.ts`
-- [ ] Assert safe artifact reads/path handling in `/Users/o/GitHub/videoforge/src/app/api/artifacts/[jobId]/[...artifact]/route.ts`
-- [ ] Add route-level tests in `tests/api-jobs-contract.test.ts` and `tests/api-artifacts-route.test.ts` (new files)
+- [x] Assert request validation and response schemas in `/videoforge/src/app/api/jobs/route.ts`
+- [x] Assert 404 behavior and response shape in `/videoforge/src/app/api/jobs/[id]/route.ts`
+- [x] Assert safe artifact reads/path handling in `/videoforge/src/app/api/artifacts/[jobId]/[...artifact]/route.ts`
+- [x] Add route-level tests in `tests/api-jobs-contract.test.ts` and `tests/api-artifacts-route.test.ts` (new files)
 
 Deliverables:
 
@@ -156,10 +156,10 @@ Goal: ensure operators can reliably understand job state and failures.
 
 Tasks:
 
-- [ ] Verify and refine list/detail rendering in `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/page.tsx`
-- [ ] Verify and refine job detail error/step/artifact sections in `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/[id]/page.tsx`
-- [ ] Improve form feedback flows in `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/new-job-form.tsx`
-- [ ] Add UI behavior tests in `tests/dashboard-jobs-page.test.tsx` and `tests/dashboard-job-detail-page.test.tsx` (new files)
+- [x] Verify and refine list/detail rendering in `/videoforge/src/app/dashboard/jobs/page.tsx`
+- [x] Verify and refine job detail error/step/artifact sections in `/videoforge/src/app/dashboard/jobs/[id]/page.tsx`
+- [x] Improve form feedback flows in `/videoforge/src/app/dashboard/jobs/new-job-form.tsx`
+- [x] Add UI behavior tests in `tests/dashboard-jobs-page.test.tsx` and `tests/dashboard-job-detail-page.test.tsx` (new files)
 
 Deliverables:
 
@@ -172,15 +172,15 @@ Goal: keep optional integrations deterministic while finishing a lean test+docum
 
 Tasks:
 
-- [ ] Verify adapter boundaries and interfaces in `/Users/o/GitHub/videoforge/src/services/openrouter.ts`, `/Users/o/GitHub/videoforge/src/services/mux.ts`, `/Users/o/GitHub/videoforge/src/cms/strapiClient.ts`
-- [ ] Confirm optional behavior for `uploadMux` and `notifyCms` in `/Users/o/GitHub/videoforge/src/workflows/videoEnrichment.ts`
-- [ ] Maintain in-process smoke route test in `/Users/o/GitHub/videoforge/tests/api-smoke.test.ts`
-- [ ] Add/update scripts in `/Users/o/GitHub/videoforge/package.json` for deterministic local/cloud runs
-- [ ] Ensure tests avoid bound ports, GUI deps, and external network calls
-- [ ] Add test-data isolation helpers in `tests/helpers/temp-env.ts` (new file)
-- [ ] Update PRD decisions/learned constraints in `/Users/o/GitHub/videoforge/prd/ai-video-enrichment-platform-prd.md`
-- [ ] Add additional solution docs in `/Users/o/GitHub/videoforge/docs/solutions/` when non-trivial issues are resolved
-- [ ] Add operator runbook notes in `/Users/o/GitHub/videoforge/README.md` (local run, smoke test, troubleshooting)
+- [x] Verify adapter boundaries and interfaces in `/videoforge/src/services/openrouter.ts`, `/videoforge/src/services/mux.ts`, `/videoforge/src/cms/strapiClient.ts`
+- [x] Confirm optional behavior for `uploadMux` and `notifyCms` in `/videoforge/src/workflows/videoEnrichment.ts`
+- [x] Maintain in-process smoke route test in `/videoforge/tests/api-smoke.test.ts`
+- [x] Add/update scripts in `/videoforge/package.json` for deterministic local/cloud runs
+- [x] Ensure tests avoid bound ports, GUI deps, and external network calls
+- [x] Add test-data isolation helpers in `tests/helpers/temp-env.ts` (new file)
+- [x] Update PRD decisions/learned constraints in `/videoforge/prd/ai-video-enrichment-platform-prd.md`
+- [x] Add additional solution docs in `/videoforge/docs/solutions/` when non-trivial issues are resolved
+- [x] Add operator runbook notes in `/videoforge/README.md` (local run, smoke test, troubleshooting)
 
 Deliverables:
 
@@ -193,27 +193,27 @@ Deliverables:
 
 ### Functional
 
-- [ ] `POST /api/jobs` creates a job and triggers workflow execution.
-- [ ] `GET /api/jobs` and `GET /api/jobs/:id` expose status, current step, retries, errors, and artifact URLs.
-- [ ] Optional steps (`translation`, `voiceover`, `mux_upload`, `cms_notify`) correctly complete or skip based on options/input.
-- [ ] Artifact route serves known artifacts and rejects invalid/missing paths safely.
-- [ ] For every Mux video job, transcript/media preprocessing uses `@mux/ai/primitives` first; custom logic only fills uncovered gaps.
-- [ ] For suitable jobs, enrichment logic uses `@mux/ai/workflows` as the default path (not optional preference).
+- [x] `POST /api/jobs` creates a job and triggers workflow execution.
+- [x] `GET /api/jobs` and `GET /api/jobs/:id` expose status, current step, retries, errors, and artifact URLs.
+- [x] Optional steps (`translation`, `voiceover`, `mux_upload`, `cms_notify`) correctly complete or skip based on options/input.
+- [x] Artifact route serves known artifacts and rejects invalid/missing paths safely.
+- [x] For every Mux video job, transcript/media preprocessing uses `@mux/ai/primitives` first; custom logic only fills uncovered gaps.
+- [x] For suitable jobs, enrichment logic uses `@mux/ai/workflows` as the default path (not optional preference).
 
 ### Non-Functional
 
-- [ ] Workflow behavior is deterministic in local/Codex Cloud test runs.
-- [ ] No architecture boundary violations from `AGENTS.md` (no extra infra/services).
-- [ ] External services remain adapter-isolated and mockable.
-- [ ] Node runtime compatibility decision for `@mux/ai` is documented and enforced by tests/tooling.
+- [x] Workflow behavior is deterministic in local/Codex Cloud test runs.
+- [x] No architecture boundary violations from `AGENTS.md` (no extra infra/services).
+- [x] External services remain adapter-isolated and mockable.
+- [x] Node runtime compatibility decision for `@mux/ai` is documented and enforced by tests/tooling.
 
 ### Testing & Quality Gates
 
-- [ ] Every new feature/change includes automated tests in same change set.
-- [ ] Tests pass in Codex Cloud-compatible mode (no local port binding required).
-- [ ] `pnpm -s typecheck` passes.
-- [ ] `pnpm -s test:smoke` passes.
-- [ ] Contract/unit tests for touched areas pass.
+- [x] Every new feature/change includes automated tests in same change set.
+- [x] Tests pass in Codex Cloud-compatible mode (no local port binding required).
+- [x] `pnpm -s typecheck` passes.
+- [x] `pnpm -s test:smoke` passes.
+- [x] Contract/unit tests for touched areas pass.
 
 ## Dependencies & Risks
 
@@ -221,7 +221,7 @@ Deliverables:
 
 - OpenRouter and Mux credentials for non-mocked integration runs
 - local artifact/job filesystem write access
-- Next.js runtime compatibility on Node 20+
+- Next.js runtime compatibility on Node 21+
 - `@mux/ai` package runtime requirement (documented as Node.js `>= 21.0.0`)
 
 ### Risks
@@ -229,7 +229,7 @@ Deliverables:
 1. Adapter behavior drift between mock and production providers.
 2. Workflow state corruption from unexpected file mutations.
 3. Dashboard confidence loss if API contracts change silently.
-4. Node 20 vs `@mux/ai` Node 21+ requirement may block direct adoption.
+4. Runtime drift between environments may cause inconsistent behavior if Node versions differ.
 5. Partial migration may duplicate logic across custom services and `@mux/ai`.
 
 ### Mitigations
@@ -237,8 +237,8 @@ Deliverables:
 - keep adapter interfaces strict and tested with mocks
 - fail-fast on JSON corruption and test negative paths
 - require contract tests for API response shapes on each feature change
-- add a Phase 1 compatibility gate before broad `@mux/ai` rollout
-- migrate feature-by-feature behind `MUX_AI_ENABLED` and remove duplicated paths after parity validation
+- enforce runtime policy with `engines.node >=21` and optional Node 22 pinning in Codex Cloud
+- keep mux-ai as default required path and remove duplicated fallback logic where safe
 
 ## Implementation Order (Actionable Checklist)
 
@@ -247,6 +247,30 @@ Deliverables:
 3. Finalize API contract tests (`src/app/api`, `tests/api-*`).
 4. Improve and test dashboard behavior (`src/app/dashboard`, `tests/dashboard-*`).
 5. Finish optional integrations, lean Cloud-safe test harness, and documentation (`src/cms`, `package.json`, `tests/helpers`, `prd`, `README`).
+
+## Follow-up Update (2026-02-15)
+
+- Finalized mux-ai dependency policy for production behavior:
+  - mux-ai remains required for core Mux enrichment steps
+  - workflow must fail deterministically when mux runtime/config/import is unavailable
+  - process remains healthy (guarded import), with no silent success fallback for core steps
+- Added structured operator diagnostics through job errors:
+  - `errors[].code`
+  - `errors[].operatorHint`
+  - `errors[].isDependencyError`
+- Confirmed test strategy shift:
+  - unit tests isolate mux-ai behind adapter-level mocking
+  - workflow/API tests assert structured dependency failures
+  - optional primitives preprocessing remains non-fatal and emits warnings instead of failing jobs
+
+## Post-Review Reliability Hardening (2026-02-15)
+
+- [x] Trimmed mux credential checks so whitespace-only values are treated as missing before import.
+- [x] Kept guarded dynamic imports and structured `MUX_AI_CONFIG_MISSING` failures for invalid/missing mux runtime env.
+- [x] Enforced no-retry behavior for deterministic mux dependency errors (`MUX_AI_CONFIG_MISSING`, `MUX_AI_IMPORT_FAILED`, `MUX_AI_INVALID_RESPONSE`).
+- [x] Simplified orchestration catch-path dedupe by using `appendJobError(..., { dedupeLast: true })` as the single dedupe mechanism.
+- [x] Reduced duplication in primitives preprocessing by introducing a shared optional-call fallback helper for VTT/chunk generation.
+- [x] Added regression coverage for invalid mux response shape and deterministic non-retry workflow behavior.
 
 ## Definition of Done for This Plan
 
@@ -259,13 +283,13 @@ Deliverables:
 
 ### Internal
 
-- `/Users/o/GitHub/videoforge/prd/ai-video-enrichment-platform-prd.md`
-- `/Users/o/GitHub/videoforge/AGENTS.md`
-- `/Users/o/GitHub/videoforge/src/workflows/videoEnrichment.ts`
-- `/Users/o/GitHub/videoforge/src/data/job-store.ts`
-- `/Users/o/GitHub/videoforge/src/app/api/jobs/route.ts`
-- `/Users/o/GitHub/videoforge/src/app/dashboard/jobs/page.tsx`
-- `/Users/o/GitHub/videoforge/docs/solutions/logic-errors/pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md`
+- `/videoforge/prd/ai-video-enrichment-platform-prd.md`
+- `/videoforge/AGENTS.md`
+- `/videoforge/src/workflows/videoEnrichment.ts`
+- `/videoforge/src/data/job-store.ts`
+- `/videoforge/src/app/api/jobs/route.ts`
+- `/videoforge/src/app/dashboard/jobs/page.tsx`
+- `/videoforge/docs/solutions/logic-errors/pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md`
 
 ### External
 
