@@ -148,6 +148,7 @@ Routes example:
 - `/dashboard`
 - `/dashboard/jobs`
 - `/dashboard/jobs/[id]`
+- `/dashboard/coverage`
 
 Displays:
 
@@ -263,6 +264,9 @@ Optional:
     BLOB_STORAGE_CONFIG=
     STRAPI_ENDPOINT=
     STRAPI_API_TOKEN=
+    NEXT_PUBLIC_GATEWAY_URL=
+    NEXT_STAGE_GATEWAY_URL=
+    NEXT_PUBLIC_WATCH_URL=
 
 ---
 
@@ -286,8 +290,9 @@ Optional:
 
 1. Create a job from `/dashboard/jobs` or `POST /api/jobs`.
 2. Watch status and step transitions in `/dashboard/jobs/[id]`.
-3. Validate generated artifacts from the Artifacts section links.
-4. For optional integrations:
+3. Use `/dashboard/coverage` to inspect coverage and submit one job per selected media item.
+4. Validate generated artifacts from the Artifacts section links.
+5. For optional integrations:
    - `uploadMux=true` should produce `muxUpload` artifact URL.
    - `notifyCms=true` should complete `cms_notify` step even when Strapi is not configured (sync result is non-blocking).
 

@@ -57,7 +57,11 @@ export async function GET(
         'Cache-Control': 'no-store'
       }
     });
-  } catch {
-    return new Response('Artifact not found.', { status: 404 });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (code === 'ENOENT') {
+      return new Response('Artifact not found.', { status: 404 });
+    }
+    return new Response('Unable to read artifact.', { status: 500 });
   }
 }

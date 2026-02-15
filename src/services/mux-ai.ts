@@ -248,7 +248,9 @@ async function tryOptionalMuxFn<T>(opts: {
     return await callMuxFn(opts);
   } catch (error) {
     if (isMuxAiError(error)) {
-      console.warn(`[mux-ai][optional] ${error.code}: ${error.message}`);
+      console.warn(
+        `[mux-ai][optional-fallback] operation="${opts.operation}" code="${error.code}" message="${error.message}"`
+      );
       return undefined;
     }
     throw error;
@@ -325,6 +327,9 @@ export async function preprocessMuxAssetWithPrimitives(
     primitives = await importMuxModule('@mux/ai/primitives');
   } catch (error) {
     if (isMuxAiError(error)) {
+      console.warn(
+        `[mux-ai][optional-fallback] operation="primitives preprocessing" code="${error.code}" message="${error.message}"`
+      );
       warnings.push(toPreprocessWarning(error));
       return { warnings };
     }

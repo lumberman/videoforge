@@ -1,6 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
-import type { Metadata } from 'next';
+import type { Metadata, Route } from 'next';
 
 export const metadata: Metadata = {
   title: 'AI Video Enrichment Platform',
@@ -27,6 +27,7 @@ export default function RootLayout({
             <strong>AI Video Enrichment Platform</strong>
             <nav style={{ display: 'flex', gap: 12 }}>
               <Link href="/dashboard/jobs">Jobs</Link>
+              <Link href={'/dashboard/coverage' as Route}>Coverage</Link>
             </nav>
           </div>
         </header>

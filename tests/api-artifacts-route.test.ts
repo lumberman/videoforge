@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import path from 'node:path';
+import { mkdir } from 'node:fs/promises';
 import { importFresh, withTempDataEnv } from './helpers/temp-env';
 
 test('artifact route serves stored artifact with correct response code', async () => {
@@ -89,5 +91,29 @@ test('artifact route returns 404 for missing artifact', async () => {
 
     assert.equal(response.status, 404);
     assert.match(await response.text(), /artifact not found/i);
+  });
+});
+
+test('artifact route returns 500 for non-ENOENT read failures', async () => {
+  await withTempDataEnv('api-artifact-internal-error', async ({ artifactRootPath }) => {
+    const artifactRoute = await importFresh<
+      typeof import('../src/app/api/artifacts/[jobId]/[...artifact]/route')
+    >('../src/app/api/artifacts/[jobId]/[...artifact]/route');
+
+    const jobRoot = path.resolve(artifactRootPath, 'job_abc123');
+    await mkdir(path.resolve(jobRoot, 'subdir'), { recursive: true });
+
+    const response = await artifactRoute.GET(
+      new Request('http://localhost/api/artifacts/job_abc123/subdir'),
+      {
+        params: Promise.resolve({
+          jobId: 'job_abc123',
+          artifact: ['subdir']
+        })
+      }
+    );
+
+    assert.equal(response.status, 500);
+    assert.match(await response.text(), /unable to read artifact/i);
   });
 });

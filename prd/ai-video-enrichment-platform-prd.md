@@ -230,6 +230,38 @@ Response includes:
 
 ---
 
+### 11.2 Implementation Decisions (2026-02-15)
+
+- Migrated legacy coverage reporting and order flow into the current single-app architecture:
+  - Added `/dashboard/coverage` route and dashboard navigation entry.
+  - Added internal coverage API routes:
+    - `/api/coverage/languages`
+    - `/api/coverage/collections`
+- Isolated external coverage integration behind service adapters and route handlers:
+  - Added `/videoforge/src/services/coverage-gateway.ts` for gateway resolution, request handling, and payload normalization.
+  - Kept workflow definitions free of direct external API calls.
+- Added deterministic gateway configuration precedence:
+  - `NEXT_PUBLIC_GATEWAY_URL`
+  - fallback `NEXT_STAGE_GATEWAY_URL`
+  - optional watch URL via `NEXT_PUBLIC_WATCH_URL`
+- Implemented deterministic batch ordering flow from coverage selection:
+  - One `POST /api/jobs` call per selected media item.
+  - Sequential submission in selected-item order.
+  - Explicit per-item created/failed/skipped outcomes with reasons and job links.
+  - Duplicate-submit guard in UI via in-flight lock.
+- Enforced explicit mapping behavior for selectable coverage items:
+  - Items missing `muxAssetId` are marked non-selectable with actionable reason text.
+  - Non-selectable items are never submitted silently.
+- Added Codex-Cloud-safe tests for migration behaviors:
+  - coverage API route env fallback and precedence
+  - non-selectable mapping behavior for missing `muxAssetId`
+  - deterministic mixed-result batch submission behavior
+  - coverage page empty/error rendering
+- Removed legacy source tree from this repository after parity and regression validation:
+  - `/videoforge/old-app-code`
+
+---
+
 ### 12. Glossary
 
 - **Workflow.dev World:** Backend storage/queue environment for workflow.dev.

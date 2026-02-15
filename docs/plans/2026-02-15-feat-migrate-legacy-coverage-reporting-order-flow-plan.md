@@ -1,7 +1,7 @@
 ---
 title: "feat: Migrate legacy coverage reporting and order flow into current app"
 type: feat
-status: active
+status: completed
 date: 2026-02-15
 ---
 
@@ -140,10 +140,10 @@ Core rules:
 ## Technical Approach
 
 ### Phase 1: Feature Foundation and Route Isolation
-- [ ] Add new route and page shell for coverage experience (`/videoforge/src/app/dashboard/coverage/page.tsx`).
-- [ ] Add navigation link from layout while preserving current jobs routes (`/videoforge/src/app/layout.tsx`).
-- [ ] Create feature module namespace (`/videoforge/src/features/coverage/`).
-- [ ] Add feature-level types for coverage collections, statuses, and selection payloads.
+- [x] Add new route and page shell for coverage experience (`/videoforge/src/app/dashboard/coverage/page.tsx`).
+- [x] Add navigation link from layout while preserving current jobs routes (`/videoforge/src/app/layout.tsx`).
+- [x] Create feature module namespace (`/videoforge/src/features/coverage/`).
+- [x] Add feature-level types for coverage collections, statuses, and selection payloads.
 
 Deliverables:
 - isolated route with no behavioral change to `/dashboard/jobs`
@@ -160,17 +160,17 @@ Research insights:
   - `CoverageSubmitResult`
 
 ### Phase 2: Gateway Data Adapters and Env Contract
-- [ ] Extend env accessor layer with deterministic gateway precedence:
+- [x] Extend env accessor layer with deterministic gateway precedence:
   - `NEXT_PUBLIC_GATEWAY_URL`
   - fallback `NEXT_STAGE_GATEWAY_URL`
   - optional watch URL accessor if needed
   (`/videoforge/src/config/env.ts`, `/videoforge/.env.example`, `/videoforge/README.md`)
-- [ ] Port legacy language/media fetch logic into adapter-style modules:
+- [x] Port legacy language/media fetch logic into adapter-style modules:
   - e.g. `/videoforge/src/services/coverage-gateway.ts`
-- [ ] Add route handlers that proxy/normalize gateway data for UI usage:
+- [x] Add route handlers that proxy/normalize gateway data for UI usage:
   - e.g. `/videoforge/src/app/api/coverage/languages/route.ts`
   - e.g. `/videoforge/src/app/api/coverage/collections/route.ts`
-- [ ] Ensure returned collection item includes deterministic `muxAssetId` or explicit mapping failure metadata.
+- [x] Ensure returned collection item includes deterministic `muxAssetId` or explicit mapping failure metadata.
 
 Deliverables:
 - gateway-backed coverage data with typed normalized response
@@ -200,14 +200,14 @@ export function resolveGatewayBaseUrl(): GatewayConfig | null {
 ```
 
 ### Phase 3: UI Migration (Scoped Styling)
-- [ ] Port/reshape legacy components into feature module:
+- [x] Port/reshape legacy components into feature module:
   - Coverage report client
   - Geo/language selector
   - Coverage bar and filtering controls
-- [ ] Convert legacy global styles to scoped styles:
+- [x] Convert legacy global styles to scoped styles:
   - CSS module or tightly namespaced feature stylesheet under `/videoforge/src/features/coverage/`
-- [ ] Keep existing global styles untouched except minimal non-breaking additions (`/videoforge/src/app/globals.css`).
-- [ ] Preserve accessibility semantics for controls, status, and selection states.
+- [x] Keep existing global styles untouched except minimal non-breaking additions (`/videoforge/src/app/globals.css`).
+- [x] Preserve accessibility semantics for controls, status, and selection states.
 
 Deliverables:
 - parity for report visualization + selection UX
@@ -229,14 +229,14 @@ Research insights:
   - all migrated selectors under a feature root namespace or CSS module.
 
 ### Phase 4: Order Flow Integration (Selection -> Jobs)
-- [ ] Replace legacy translate stub behavior (`console.info`) with real submission pipeline.
-- [ ] Build deterministic client submission service:
+- [x] Replace legacy translate stub behavior (`console.info`) with real submission pipeline.
+- [x] Build deterministic client submission service:
   - takes selected items
   - validates/filters by available `muxAssetId`
   - creates one `POST /api/jobs` request per selected item sequentially
   - aggregates result summary (created/failed/skipped)
-- [ ] Add UI states for submit progress, partial failures, retry action, and links to created jobs.
-- [ ] Add duplicate-submit guard (button lock + in-flight marker).
+- [x] Add UI states for submit progress, partial failures, retry action, and links to created jobs.
+- [x] Add duplicate-submit guard (button lock + in-flight marker).
 
 Deliverables:
 - production-grade ordering flow using current job API unchanged
@@ -271,15 +271,15 @@ for (const item of selectedItems) {
 ```
 
 ### Phase 5: Verification, Hardening, and Decommission
-- [ ] Add tests for new coverage API routes (validation, error handling, env fallback behavior).
-- [ ] Add tests for selection and batch job submission logic.
-- [ ] Add SSR rendering tests for new coverage page and key empty/error states.
-- [ ] Re-run and keep passing existing suites:
+- [x] Add tests for new coverage API routes (validation, error handling, env fallback behavior).
+- [x] Add tests for selection and batch job submission logic.
+- [x] Add SSR rendering tests for new coverage page and key empty/error states.
+- [x] Re-run and keep passing existing suites:
   - `tests/api-jobs-contract.test.ts`
   - `tests/api-smoke.test.ts`
   - dashboard rendering tests
-- [ ] Update PRD with migration decisions/learned constraints (`/videoforge/prd/ai-video-enrichment-platform-prd.md`).
-- [ ] After parity validation and tests pass, delete `/videoforge/old-app-code`.
+- [x] Update PRD with migration decisions/learned constraints (`/videoforge/prd/ai-video-enrichment-platform-prd.md`).
+- [x] After parity validation and tests pass, delete `/videoforge/old-app-code`.
 
 Deliverables:
 - complete feature parity migration in current architecture
@@ -311,33 +311,33 @@ Research insights:
 ## Acceptance Criteria
 
 ### Functional Requirements
-- [ ] Coverage route exists and is reachable from dashboard nav.
-- [ ] Coverage data and language metadata are fetched from gateway using env precedence (`NEXT_PUBLIC_GATEWAY_URL` -> `NEXT_STAGE_GATEWAY_URL`).
-- [ ] Operators can filter and select media items by coverage/report criteria.
-- [ ] Submit creates one job per selected media item using extracted `muxAssetId`.
-- [ ] Batch submit summary clearly reports created, failed, and skipped items with reasons.
-- [ ] Existing jobs list/detail routes remain fully functional.
+- [x] Coverage route exists and is reachable from dashboard nav.
+- [x] Coverage data and language metadata are fetched from gateway using env precedence (`NEXT_PUBLIC_GATEWAY_URL` -> `NEXT_STAGE_GATEWAY_URL`).
+- [x] Operators can filter and select media items by coverage/report criteria.
+- [x] Submit creates one job per selected media item using extracted `muxAssetId`.
+- [x] Batch submit summary clearly reports created, failed, and skipped items with reasons.
+- [x] Existing jobs list/detail routes remain fully functional.
 
 ### Non-Functional Requirements
-- [ ] No new infrastructure/services introduced.
-- [ ] External integrations remain isolated behind adapters/route handlers.
-- [ ] UI behavior remains deterministic for repeated selections/submissions.
-- [ ] Styles are scoped; no regressions to existing dashboard pages.
+- [x] No new infrastructure/services introduced.
+- [x] External integrations remain isolated behind adapters/route handlers.
+- [x] UI behavior remains deterministic for repeated selections/submissions.
+- [x] Styles are scoped; no regressions to existing dashboard pages.
 
 ### Quality Gates
-- [ ] New feature tests are included in same change set.
-- [ ] Existing contract/smoke/dashboard tests continue passing.
-- [ ] Typecheck and lint pass.
-- [ ] PRD updated with migration decisions and learnings.
+- [x] New feature tests are included in same change set.
+- [x] Existing contract/smoke/dashboard tests continue passing.
+- [x] Typecheck and lint pass.
+- [x] PRD updated with migration decisions and learnings.
 
 ### Test Matrix (Deepened)
-- [ ] `coverage API route` returns explicit error when both gateway env vars are missing.
-- [ ] `coverage API route` uses precedence (`NEXT_PUBLIC_GATEWAY_URL` then `NEXT_STAGE_GATEWAY_URL`).
-- [ ] `coverage mapping` marks media items missing `muxAssetId` as non-submittable with reason.
-- [ ] `coverage submit` locks button during in-flight requests and blocks duplicate submit.
-- [ ] `coverage submit` returns stable ordered summary for sequential mixed outcomes.
-- [ ] `coverage page` handles empty datasets and partial gateway failures without crashing.
-- [ ] Existing tests still pass:
+- [x] `coverage API route` returns explicit error when both gateway env vars are missing.
+- [x] `coverage API route` uses precedence (`NEXT_PUBLIC_GATEWAY_URL` then `NEXT_STAGE_GATEWAY_URL`).
+- [x] `coverage mapping` marks media items missing `muxAssetId` as non-submittable with reason.
+- [x] `coverage submit` locks button during in-flight requests and blocks duplicate submit.
+- [x] `coverage submit` returns stable ordered summary for sequential mixed outcomes.
+- [x] `coverage page` handles empty datasets and partial gateway failures without crashing.
+- [x] Existing tests still pass:
   - `tests/api-jobs-contract.test.ts`
   - `tests/api-smoke.test.ts`
   - `tests/dashboard-jobs-page.test.tsx`

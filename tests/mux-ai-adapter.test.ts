@@ -181,3 +181,53 @@ test('mux primitives preprocessing is non-fatal and returns warnings', async () 
     }
   );
 });
+
+test('mux adapter emits warning when optional primitives path falls back to workflow', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const warnings: string[] = [];
+      const originalWarn = console.warn;
+      console.warn = (...args: unknown[]) => {
+        warnings.push(args.map((value) => String(value)).join(' '));
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async transcribe() {
+              return { invalid: true };
+            }
+          };
+        }
+
+        return {
+          async transcribe() {
+            return {
+              language: 'en',
+              text: 'fallback transcript',
+              segments: [{ startSec: 0, endSec: 1, text: 'fallback transcript' }]
+            };
+          }
+        };
+      });
+
+      try {
+        const transcript = await muxAiModule.transcribeWithMuxAi('mux-asset-fallback-warning');
+        assert.equal(transcript.language, 'en');
+        assert.equal(
+          warnings.some((line) => line.includes('[mux-ai][optional-fallback]')),
+          true
+        );
+      } finally {
+        console.warn = originalWarn;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
