@@ -5,30 +5,32 @@ import type { JobCreatePayload } from '@/types/job';
 
 export const dynamic = 'force-dynamic';
 
+class PayloadValidationError extends Error {}
+
 function parsePayload(input: unknown): JobCreatePayload {
   if (!input || typeof input !== 'object') {
-    throw new Error('Payload must be an object.');
+    throw new PayloadValidationError('Payload must be an object.');
   }
 
   const body = input as Partial<JobCreatePayload>;
 
   if (!body.muxAssetId || typeof body.muxAssetId !== 'string') {
-    throw new Error('muxAssetId is required and must be a string.');
+    throw new PayloadValidationError('muxAssetId is required and must be a string.');
   }
 
   if (!Array.isArray(body.languages)) {
-    throw new Error('languages is required and must be an array.');
+    throw new PayloadValidationError('languages is required and must be an array.');
   }
 
   if (body.languages.some((lang) => typeof lang !== 'string')) {
-    throw new Error('languages must contain only strings.');
+    throw new PayloadValidationError('languages must contain only strings.');
   }
 
   if (
     body.options !== undefined &&
     (typeof body.options !== 'object' || body.options === null || Array.isArray(body.options))
   ) {
-    throw new Error('options must be an object when provided.');
+    throw new PayloadValidationError('options must be an object when provided.');
   }
 
   const normalizeBoolean = (value: unknown, field: string) => {
@@ -36,14 +38,14 @@ function parsePayload(input: unknown): JobCreatePayload {
       return undefined;
     }
     if (typeof value !== 'boolean') {
-      throw new Error(`${field} must be a boolean when provided.`);
+      throw new PayloadValidationError(`${field} must be a boolean when provided.`);
     }
     return value;
   };
 
   const muxAssetId = body.muxAssetId.trim();
   if (!muxAssetId) {
-    throw new Error('muxAssetId cannot be empty.');
+    throw new PayloadValidationError('muxAssetId cannot be empty.');
   }
 
   return {
@@ -67,9 +69,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const payload = parsePayload(await request.json());
+    let parsedJson: unknown;
+    try {
+      parsedJson = await request.json();
+    } catch {
+      throw new PayloadValidationError('Request body must be valid JSON.');
+    }
+
+    const payload = parsePayload(parsedJson);
     const job = await createJob(payload);
-    void startVideoEnrichment(job.id);
+    void startVideoEnrichment(job.id).catch((error) => {
+      console.error('Failed to start video enrichment workflow.', error);
+    });
 
     return NextResponse.json(
       {
@@ -79,7 +90,10 @@ export async function POST(request: Request) {
       { status: 202 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to create job.';
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof PayloadValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Unable to create job.' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdir } from 'node:fs/promises';
 import { importFresh, withTempDataEnv } from './helpers/temp-env';
 
 test('POST /api/jobs accepts valid payload and returns pending job', async () => {
@@ -52,6 +53,51 @@ test('POST /api/jobs validates payload shape', async () => {
     assert.equal(invalidResponse.status, 400);
     const payload = (await invalidResponse.json()) as { error?: string };
     assert.match(payload.error ?? '', /languages must contain only strings/i);
+  });
+});
+
+test('POST /api/jobs returns 400 for malformed JSON body', async () => {
+  await withTempDataEnv('api-jobs-malformed-json', async () => {
+    const jobsRoute = await importFresh<typeof import('../src/app/api/jobs/route')>(
+      '../src/app/api/jobs/route'
+    );
+
+    const response = await jobsRoute.POST(
+      new Request('http://localhost/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{'
+      })
+    );
+
+    assert.equal(response.status, 400);
+    const payload = (await response.json()) as { error?: string };
+    assert.match(payload.error ?? '', /valid json/i);
+  });
+});
+
+test('POST /api/jobs returns 500 for internal persistence failures', async () => {
+  await withTempDataEnv('api-jobs-internal-failure', async ({ jobsDbPath }) => {
+    await mkdir(jobsDbPath, { recursive: true });
+    const jobsRoute = await importFresh<typeof import('../src/app/api/jobs/route')>(
+      '../src/app/api/jobs/route'
+    );
+
+    const response = await jobsRoute.POST(
+      new Request('http://localhost/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          muxAssetId: 'asset-api-post',
+          languages: ['es'],
+          options: {}
+        })
+      })
+    );
+
+    assert.equal(response.status, 500);
+    const payload = (await response.json()) as { error?: string };
+    assert.match(payload.error ?? '', /unable to create job/i);
   });
 });
 
