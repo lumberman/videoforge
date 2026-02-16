@@ -202,6 +202,7 @@ User prompt content (v1):
 - Split cues or extend timing only within duration bounds and non-overlap rules.
 - One thought per cue when possible.
 - Preserve meaning exactly.
+- Return ONLY WebVTT.
 
 ## Deterministic Methods and Constraints
 
@@ -298,89 +299,89 @@ const subtitleResult = await runStep({
 ### Implementation Phases
 
 #### Phase 1: Contract and configuration foundation
-- [ ] Add subtitle post-processing domain types:
+- [x] Add subtitle post-processing domain types:
   - cue model (`id,start,end,text`),
   - language class (`LTR|RTL|CJK`),
   - validation error schema (`rule`, `cueIndex`, `measured`, `limit`),
   - provenance union (`ai-raw|ai-processed|ai-human|human`).
-- [ ] Add centralized config/constants:
+- [x] Add centralized config/constants:
   - profiles (LTR/RTL/CJK),
   - `languageProfileVersion`, `promptVersion`, `validatorVersion`, `fallbackVersion`,
   - allowlist and optional flags.
-- [ ] Add normalization/counting utilities implementing PRD rules (whitespace normalization, grapheme counting fallback behavior).
-- [ ] Add explicit transition helpers for provenance state changes and forbidden transitions.
+- [x] Add normalization/counting utilities implementing PRD rules (whitespace normalization, grapheme counting fallback behavior).
+- [x] Add explicit transition helpers for provenance state changes and forbidden transitions.
 
 Deliverables:
 - deterministic shared contracts with no workflow wiring yet.
 
 #### Phase 2: Mux data adapter and provenance gate
-- [ ] Introduce `MuxDataAdapter` primitives-first retrieval surface.
-- [ ] Add subtitle provenance model (`subtitleOrigin`: `ai-raw|ai-processed|ai-human|human`) to retrieved/generated track metadata.
-- [ ] Implement strict gate function:
+- [x] Introduce `MuxDataAdapter` primitives-first retrieval surface.
+- [x] Add subtitle provenance model (`subtitleOrigin`: `ai-raw|ai-processed|ai-human|human`) to retrieved/generated track metadata.
+- [x] Implement strict gate function:
   - process only when `subtitleOrigin=ai-raw` and language allowlist contains target.
   - treat `ai-processed|ai-human|human` as non-mutation states.
-- [ ] Ensure unknown provenance defaults to safe skip (`human` behavior).
-- [ ] Persist provenance in generated subtitle metadata and artifact manifest.
-- [ ] Define a compatibility strategy for legacy tracks missing provenance (backfill as `human`).
+- [x] Ensure unknown provenance defaults to safe skip (`human` behavior).
+- [x] Persist provenance in generated subtitle metadata and artifact manifest.
+- [x] Define a compatibility strategy for legacy tracks missing provenance (backfill as `human`).
 
 Deliverables:
 - canonical source retrieval and mutation eligibility logic.
 
 #### Phase 3: Deterministic formatter/validator core
-- [ ] Implement BCP-47 parsing + language class inference.
-- [ ] Implement profile-aware cue shaping constraints:
+- [x] Implement BCP-47 parsing + language class inference.
+- [x] Implement profile-aware cue shaping constraints:
   - maxLines/maxCPL/maxCPS/minDuration/maxDuration/minGap,
   - overlap prevention and monotonic timing,
   - LTR/RTL line-break heuristics,
   - CJK grapheme-safe splitting.
-- [ ] Implement strict WebVTT parser/validator with machine-readable violations.
-- [ ] Implement deterministic fallback formatter with same validation contract.
-- [ ] Lock timestamp formatter to `HH:MM:SS.mmm` and monotonic checks.
-- [ ] Add explicit non-speech token policy (`[Music]`, `[Applause]`, `♪...♪`) as first-class cue handling.
+- [x] Implement strict WebVTT parser/validator with machine-readable violations.
+- [x] Implement deterministic fallback formatter with same validation contract.
+- [x] Lock timestamp formatter to `HH:MM:SS.mmm` and monotonic checks.
+- [x] Add explicit non-speech token policy (`[Music]`, `[Applause]`, `♪...♪`) as first-class cue handling.
 
 Deliverables:
 - validator as authoritative gate, fallback as guaranteed deterministic recovery path.
 
 #### Phase 4: AI theology + language passes
-- [ ] Add theology pass (analysis + patch suggestions) using cue-JSON payload.
-- [ ] Add language quality pass (light corrective rewrite) using same cue structure.
-- [ ] Bound model settings (`temperature=0`, bounded tokens, prompt versioning).
-- [ ] Implement retry contract:
+- [x] Add theology pass (analysis + patch suggestions) using cue-JSON payload.
+- [x] Add language quality pass (light corrective rewrite) using same cue structure.
+- [x] Bound model settings (`temperature=0`, bounded tokens, prompt versioning).
+- [x] Implement retry contract:
   - quality output validated,
   - at most one retry with structured validator errors,
   - no retry for non-validation failures (dependency/config/runtime/classification errors).
-- [ ] Preserve strict no-invent/no-drop/no-paraphrase constraints in prompt contracts.
-- [ ] Persist theology annotations and language-pass deltas as separate artifacts for audit.
+- [x] Preserve strict no-invent/no-drop/no-paraphrase constraints in prompt contracts.
+- [x] Persist theology annotations and language-pass deltas as separate artifacts for audit.
 
 Deliverables:
 - constrained dual-pass AI pipeline integrated with deterministic validator/fallback ladder.
 
 #### Phase 5: Workflow integration and metadata persistence
-- [ ] Add explicit workflow step(s) for subtitle post-processing visibility (e.g., `subtitle_post_process`).
-- [ ] Wire post-processor into `startVideoEnrichment` before Mux attach stage.
-- [ ] Persist output artifacts:
+- [x] Add explicit workflow step(s) for subtitle post-processing visibility (e.g., `subtitle_post_process`).
+- [x] Wire post-processor into `startVideoEnrichment` before Mux attach stage.
+- [x] Persist output artifacts:
   - final `subtitles.vtt`,
   - per-language QA report (annotations/errors),
   - post-process manifest including versions/hashes and provenance outcome.
-- [ ] Extend attach metadata contract:
+- [x] Extend attach metadata contract:
   - `source`, `ai_post_processed`, versions, input hashes, language class.
-- [ ] Keep step status/retry/error observability consistent with existing job-store patterns.
-- [ ] Extend workflow step enums and initial step builder:
+- [x] Keep step status/retry/error observability consistent with existing job-store patterns.
+- [x] Extend workflow step enums and initial step builder:
   - `/videoforge/src/types/job.ts`
   - `/videoforge/src/lib/workflow-steps.ts`
-- [ ] Keep jobs API schema backward-compatible while surfacing new subtitle artifacts/metadata fields.
+- [x] Keep jobs API schema backward-compatible while surfacing new subtitle artifacts/metadata fields.
 
 Deliverables:
 - end-to-end workflow behavior with deterministic state transitions and artifacts.
 
 #### Phase 6: Test matrix and rollout controls
-- [ ] Golden fixture tests (LTR/RTL/CJK/mixed/non-speech cases) with exact expected VTT.
-- [ ] Property tests for randomized segment streams and invariant checks.
-- [ ] Integration tests for retry/fallback ladder and non-attachment on failure.
-- [ ] Workflow tests for step sequencing, skip behavior for non-AI/human provenance, and idempotent rerun behavior.
-- [ ] Feature-flag/allowlist tests to support staged rollout.
-- [ ] API contract tests for new artifacts and provenance metadata exposure.
-- [ ] Seeded randomized tests for deterministic replay (`same input + versions => same output`).
+- [x] Golden fixture tests (LTR/RTL/CJK/mixed/non-speech cases) with exact expected VTT.
+- [x] Property tests for randomized segment streams and invariant checks.
+- [x] Integration tests for retry/fallback ladder and non-attachment on failure.
+- [x] Workflow tests for step sequencing, skip behavior for non-AI/human provenance, and idempotent rerun behavior.
+- [x] Feature-flag/allowlist tests to support staged rollout.
+- [x] API contract tests for new artifacts and provenance metadata exposure.
+- [x] Seeded randomized tests for deterministic replay (`same input + versions => same output`).
 
 Deliverables:
 - confidence gates that lock PRD invariants and rollout safety.
@@ -396,30 +397,30 @@ Deliverables:
 ## Acceptance Criteria
 
 ### Functional requirements
-- [ ] Post-processor mutation runs only for `subtitleOrigin=ai-raw`.
-- [ ] `subtitleOrigin=ai-processed|ai-human|human` tracks are never mutated by this pass.
-- [ ] Successful automated post-processing transitions provenance from `ai-raw` to `ai-processed`.
-- [ ] Unknown/missing provenance defaults to non-mutation behavior equivalent to `human`.
-- [ ] WebVTT output always passes strict syntax/timing/constraint validation before attach.
-- [ ] LTR/RTL/CJK profile rules are applied with deterministic classification and constraint enforcement.
-- [ ] One retry max is enforced for invalid AI output, then deterministic fallback is attempted.
-- [ ] Retry is only permitted for validator-rule failures; non-validation failures fail fast and proceed to deterministic fallback or terminal failure per ladder.
-- [ ] Invalid outputs are never attached to Mux.
+- [x] Post-processor mutation runs only for `subtitleOrigin=ai-raw`.
+- [x] `subtitleOrigin=ai-processed|ai-human|human` tracks are never mutated by this pass.
+- [x] Successful automated post-processing transitions provenance from `ai-raw` to `ai-processed`.
+- [x] Unknown/missing provenance defaults to non-mutation behavior equivalent to `human`.
+- [x] WebVTT output always passes strict syntax/timing/constraint validation before attach.
+- [x] LTR/RTL/CJK profile rules are applied with deterministic classification and constraint enforcement.
+- [x] One retry max is enforced for invalid AI output, then deterministic fallback is attempted.
+- [x] Retry is only permitted for validator-rule failures; non-validation failures fail fast and proceed to deterministic fallback or terminal failure per ladder.
+- [x] Invalid outputs are never attached to Mux.
 
 ### Non-functional requirements
-- [ ] All profile/prompt/validator/fallback versions are centralized and persisted.
-- [ ] Hashes (`whisperSegmentsSha256`, `postProcessInputSha256`) are persisted for reproducibility.
-- [ ] Idempotency key contract prevents duplicate processing/attachment for identical inputs.
-- [ ] Job step status/retries/errors are observable via existing jobs APIs.
+- [x] All profile/prompt/validator/fallback versions are centralized and persisted.
+- [x] Hashes (`whisperSegmentsSha256`, `postProcessInputSha256`) are persisted for reproducibility.
+- [x] Idempotency key contract prevents duplicate processing/attachment for identical inputs.
+- [x] Job step status/retries/errors are observable via existing jobs APIs.
 - [ ] Processing p95 target and attach success targets from PRD are measurable.
 
 ### Quality gates
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test tests/mux-ai-adapter.test.ts`
-- [ ] `pnpm test tests/workflow-state.test.ts`
-- [ ] `pnpm test tests/api-jobs-contract.test.ts`
-- [ ] `pnpm test` (full suite)
-- [ ] New subtitle post-process test files pass (listed below).
+- [x] `pnpm typecheck`
+- [x] `pnpm test tests/mux-ai-adapter.test.ts`
+- [x] `pnpm test tests/workflow-state.test.ts`
+- [x] `pnpm test tests/api-jobs-contract.test.ts`
+- [x] `pnpm test` (full suite)
+- [x] New subtitle post-process test files pass (listed below).
 
 ## Test Plan (Planned Files)
 
@@ -444,19 +445,19 @@ Deliverables:
 - `/videoforge/tests/mux-data-adapter.test.ts`
 
 ### Required scenario assertions
-- [ ] Validator rejects:
+- [x] Validator rejects:
   - malformed headers/timestamps,
   - overlaps and min-gap violations,
   - CPS/CPL/max-lines overflow,
   - disallowed markup when styling is disabled.
-- [ ] Retry ladder behavior:
+- [x] Retry ladder behavior:
   - pass #1 invalid -> pass #2 valid (no fallback),
   - pass #1 invalid -> pass #2 invalid -> fallback valid,
   - fallback invalid -> hard fail and no attach.
-- [ ] Provenance gating behavior:
+- [x] Provenance gating behavior:
   - `ai-raw` processed,
   - `ai-processed|ai-human|human|unknown` skipped.
-- [ ] Determinism replay:
+- [x] Determinism replay:
   - same input payload + versions + model params => stable output and stable hashes.
 
 ## Dependencies & Prerequisites

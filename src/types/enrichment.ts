@@ -33,4 +33,6 @@ export interface EmbeddingVector {
 export interface TranslationResult {
   language: string;
   text: string;
+  segments?: TranscriptSegment[];
+  subtitleOrigin?: 'ai-raw' | 'ai-processed' | 'ai-human' | 'human';
 }

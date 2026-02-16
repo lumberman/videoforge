@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { mkdir } from 'node:fs/promises';
+import path from 'node:path';
 import { importFresh, withTempDataEnv } from './helpers/temp-env';
+import { withMockMuxAi } from './helpers/mux-ai-mock';
 
 test('POST /api/jobs accepts valid payload and returns pending job', async () => {
   await withTempDataEnv('api-jobs-post', async () => {
@@ -213,5 +215,168 @@ test('GET /api/jobs/:id returns 404 for unknown job id', async () => {
     assert.equal(response.status, 404);
     const payload = (await response.json()) as { error?: string };
     assert.match(payload.error ?? '', /job not found/i);
+  });
+});
+
+test('GET job APIs expose subtitle artifact URLs and provenance metadata contract', async () => {
+  await withTempDataEnv('api-jobs-subtitle-contract', async ({ artifactRootPath }) => {
+    await withMockMuxAi(async () => {
+      const jobsRoute = await importFresh<typeof import('../src/app/api/jobs/route')>(
+        '../src/app/api/jobs/route'
+      );
+      const jobByIdRoute = await importFresh<
+        typeof import('../src/app/api/jobs/[id]/route')
+      >('../src/app/api/jobs/[id]/route');
+      const artifactRoute = await importFresh<
+        typeof import('../src/app/api/artifacts/[jobId]/[...artifact]/route')
+      >('../src/app/api/artifacts/[jobId]/[...artifact]/route');
+      const jobStore = await importFresh<typeof import('../src/data/job-store')>(
+        '../src/data/job-store'
+      );
+      const workflow = await importFresh<typeof import('../src/workflows/videoEnrichment')>(
+        '../src/workflows/videoEnrichment'
+      );
+
+      const job = await jobStore.createJob({
+        muxAssetId: 'asset-api-subtitle-contract',
+        languages: ['es'],
+        options: {
+          generateVoiceover: false,
+          uploadMux: true,
+          notifyCms: false
+        }
+      });
+      await workflow.startVideoEnrichment(job.id);
+
+      const jobsResponse = await jobsRoute.GET();
+      assert.equal(jobsResponse.status, 200);
+      const jobs = (await jobsResponse.json()) as Array<{
+        id: string;
+        artifacts: Record<string, string>;
+      }>;
+      const listRecord = jobs.find((item) => item.id === job.id);
+      assert.ok(listRecord);
+      assert.equal(typeof listRecord.artifacts.subtitlePostProcessManifest, 'string');
+      assert.equal(typeof listRecord.artifacts.subtitlesByLanguage, 'string');
+      assert.equal(typeof listRecord.artifacts.subtitleTheologyByLanguage, 'string');
+      assert.equal(typeof listRecord.artifacts.subtitleLanguageDeltasByLanguage, 'string');
+      assert.equal(typeof listRecord.artifacts.subtitleTrackMetadata, 'string');
+
+      const jobByIdResponse = await jobByIdRoute.GET(
+        new Request(`http://localhost/api/jobs/${job.id}`),
+        {
+          params: Promise.resolve({ id: job.id })
+        }
+      );
+      assert.equal(jobByIdResponse.status, 200);
+      const byId = (await jobByIdResponse.json()) as {
+        id: string;
+        artifacts: Record<string, string>;
+      };
+      assert.equal(byId.id, job.id);
+      assert.equal(typeof byId.artifacts.subtitlePostProcessManifest, 'string');
+      assert.equal(typeof byId.artifacts.subtitlesByLanguage, 'string');
+      assert.equal(typeof byId.artifacts.subtitleTheologyByLanguage, 'string');
+      assert.equal(typeof byId.artifacts.subtitleLanguageDeltasByLanguage, 'string');
+      assert.equal(typeof byId.artifacts.subtitleTrackMetadata, 'string');
+
+      const manifestUrl = byId.artifacts.subtitlePostProcessManifest;
+      assert.ok(manifestUrl);
+      const manifestPath = manifestUrl.replace('/api/artifacts/', '');
+      const [manifestJobId, manifestFile] = manifestPath.split('/');
+      assert.equal(manifestJobId, encodeURIComponent(job.id));
+      assert.ok(manifestFile);
+
+      const manifestResponse = await artifactRoute.GET(
+        new Request(`http://localhost${manifestUrl}`),
+        {
+          params: Promise.resolve({
+            jobId: decodeURIComponent(manifestJobId),
+            artifact: [decodeURIComponent(manifestFile)]
+          })
+        }
+      );
+      assert.equal(manifestResponse.status, 200);
+      const manifest = (await manifestResponse.json()) as {
+        tracks: Array<{
+          language: string;
+          theologyIssuesUrl: string;
+          languageQualityDeltasUrl: string;
+          subtitleOriginBefore: string;
+          subtitleOriginAfter: string;
+          idempotencyKey: string;
+          cacheHit: boolean;
+          whisperSegmentsSha256: string;
+          postProcessInputSha256: string;
+        }>;
+      };
+      assert.ok(manifest.tracks.length > 0);
+      const track = manifest.tracks[0];
+      assert.ok(track);
+      assert.equal(track.subtitleOriginBefore, 'ai-raw');
+      assert.equal(track.subtitleOriginAfter, 'ai-processed');
+      assert.equal(typeof track.theologyIssuesUrl, 'string');
+      assert.equal(typeof track.languageQualityDeltasUrl, 'string');
+      assert.equal(typeof track.idempotencyKey, 'string');
+      assert.equal(typeof track.cacheHit, 'boolean');
+      assert.equal(typeof track.whisperSegmentsSha256, 'string');
+      assert.equal(typeof track.postProcessInputSha256, 'string');
+
+      const trackMetadataUrl = byId.artifacts.subtitleTrackMetadata;
+      assert.ok(trackMetadataUrl);
+      const trackMetadataPath = trackMetadataUrl.replace('/api/artifacts/', '');
+      const [trackMetadataJobId, trackMetadataFile] = trackMetadataPath.split('/');
+      assert.equal(trackMetadataJobId, encodeURIComponent(job.id));
+      assert.ok(trackMetadataFile);
+
+      const trackMetadataResponse = await artifactRoute.GET(
+        new Request(`http://localhost${trackMetadataUrl}`),
+        {
+          params: Promise.resolve({
+            jobId: decodeURIComponent(trackMetadataJobId),
+            artifact: [decodeURIComponent(trackMetadataFile)]
+          })
+        }
+      );
+      assert.equal(trackMetadataResponse.status, 200);
+      const trackMetadata = (await trackMetadataResponse.json()) as Array<{
+        metadata: {
+          source: string;
+          ai_post_processed: boolean;
+          subtitleOriginBefore: string;
+          subtitleOriginAfter: string;
+          languageClass: string;
+          languageProfileVersion: string;
+          promptVersion: string;
+          validatorVersion: string;
+          fallbackVersion: string;
+          whisperSegmentsSha256: string;
+          postProcessInputSha256: string;
+          idempotencyKey: string;
+        };
+      }>;
+      assert.ok(trackMetadata.length > 0);
+      const firstMetadata = trackMetadata[0]?.metadata;
+      assert.ok(firstMetadata);
+      assert.equal(firstMetadata.source, 'ai_post_processed');
+      assert.equal(typeof firstMetadata.ai_post_processed, 'boolean');
+      assert.equal(firstMetadata.subtitleOriginBefore, 'ai-raw');
+      assert.equal(firstMetadata.subtitleOriginAfter, 'ai-processed');
+      assert.equal(typeof firstMetadata.languageClass, 'string');
+      assert.equal(firstMetadata.languageProfileVersion, 'v1');
+      assert.equal(firstMetadata.promptVersion, 'v1');
+      assert.equal(firstMetadata.validatorVersion, 'v1');
+      assert.equal(firstMetadata.fallbackVersion, 'v1');
+      assert.equal(typeof firstMetadata.whisperSegmentsSha256, 'string');
+      assert.equal(typeof firstMetadata.postProcessInputSha256, 'string');
+      assert.equal(typeof firstMetadata.idempotencyKey, 'string');
+
+      const storedManifestPath = path.join(
+        artifactRootPath,
+        job.id,
+        decodeURIComponent(manifestFile)
+      );
+      assert.equal(storedManifestPath.endsWith('subtitle-post-process-manifest.json'), true);
+    });
   });
 });
