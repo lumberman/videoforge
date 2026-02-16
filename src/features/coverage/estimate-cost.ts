@@ -11,24 +11,14 @@ function isPositiveFinite(value: number): boolean {
   return Number.isFinite(value) && value > 0;
 }
 
-function toNonNegative(value: number): number {
-  if (!Number.isFinite(value) || value < 0) {
-    return 0;
-  }
-  return value;
-}
-
 function estimateTokenCostUsd(
   tokensIn: number,
   tokensOut: number,
   pricing: TokenPricing
 ): number {
-  const safeIn = toNonNegative(tokensIn);
-  const safeOut = toNonNegative(tokensOut);
-
   return (
-    (safeIn / TOKENS_PER_MILLION) * pricing.inputUsdPer1MTokens +
-    (safeOut / TOKENS_PER_MILLION) * pricing.outputUsdPer1MTokens
+    (tokensIn / TOKENS_PER_MILLION) * pricing.inputUsdPer1MTokens +
+    (tokensOut / TOKENS_PER_MILLION) * pricing.outputUsdPer1MTokens
   );
 }
 
@@ -96,13 +86,13 @@ export function estimateCoverageTranslateCostUsd(
     pricing.postProcessingPricing
   );
 
-  const languages = Math.floor(input.selectedLanguageCount);
+  const languages = Math.max(0, Math.floor(input.selectedLanguageCount));
   const total =
     transcriptionCost +
     languages * translationCostPerLanguage +
     languages * postProcessCostPerLanguage;
 
-  return toNonNegative(total);
+  return Number.isFinite(total) && total > 0 ? total : 0;
 }
 
 export function formatEstimatedUsd(usd: number): string {

@@ -27,7 +27,6 @@ import {
 import { LanguageGeoSelector } from './LanguageGeoSelector'
 import {
   buildCoverageJobsQueueUrl,
-  getSelectedSelectableVideosInOrder,
   getSelectedVideosInOrder,
   shouldRedirectToJobsQueueAfterCoverageSubmit,
   submitCoverageSelection
@@ -1483,7 +1482,13 @@ export function CoverageReportClient({
       ? [languageOptions[0]?.englishLabel ?? 'Unknown']
       : selectedLabels
   const selectedVideosForEstimate = useMemo(
-    () => getSelectedSelectableVideosInOrder(cachedCollections, selectedSet),
+    () =>
+      getSelectedVideosInOrder(cachedCollections, selectedSet).filter(
+        (
+          video
+        ): video is CoverageVideo & { selectable: true; muxAssetId: string } =>
+          video.selectable
+      ),
     [cachedCollections, selectedSet]
   )
   const estimatedCostLabel = useMemo(() => {

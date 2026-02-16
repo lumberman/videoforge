@@ -314,6 +314,99 @@
       "currentStep": "artifact_upload",
       "startedAt": "2026-02-14T19:15:13.371Z",
       "completedAt": "2026-02-14T19:15:13.384Z"
+    },
+    {
+      "id": "job_3346e68dcd4d42bf99fd",
+      "muxAssetId": "sample-mux-asset",
+      "languages": [
+        "es",
+        "fr"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-16T17:42:23.551Z",
+      "updatedAt": "2026-02-16T17:42:23.559Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-16T17:42:23.556Z",
+          "finishedAt": "2026-02-16T17:42:23.557Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-16T17:42:23.557Z",
+          "finishedAt": "2026-02-16T17:42:23.558Z",
+          "error": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET."
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET.",
+          "at": "2026-02-16T17:42:23.558Z",
+          "code": "MUX_AI_CONFIG_MISSING",
+          "operatorHint": "Configure MUX_AI_WORKFLOW_SECRET_KEY (preferred) or MUX_TOKEN_ID and MUX_TOKEN_SECRET, then retry the job.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-16T17:42:23.555Z",
+      "completedAt": "2026-02-16T17:42:23.559Z"
     }
   ]
 }
