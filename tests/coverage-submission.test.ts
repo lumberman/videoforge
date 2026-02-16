@@ -17,6 +17,7 @@ function selectableVideo(id: string, muxAssetId: string): CoverageVideo {
     metadataStatus: 'none',
     thumbnailUrl: null,
     watchUrl: null,
+    durationSeconds: null,
     selectable: true,
     muxAssetId,
     unselectableReason: null
@@ -32,6 +33,7 @@ function unmappableVideo(id: string): CoverageVideo {
     metadataStatus: 'none',
     thumbnailUrl: null,
     watchUrl: null,
+    durationSeconds: null,
     selectable: false,
     muxAssetId: null,
     unselectableReason: 'Missing muxAssetId mapping for this item.'

@@ -237,6 +237,7 @@ test('coverage collections route marks items missing muxAssetId as non-selectabl
               subtitleStatus: 'human',
               voiceoverStatus: 'none',
               metadataStatus: 'ai',
+              durationSeconds: '540',
               muxAssetId: 'mux-asset-1'
             },
             {
@@ -272,6 +273,7 @@ test('coverage collections route marks items missing muxAssetId as non-selectabl
             videos: Array<{
               id: string;
               selectable: boolean;
+              durationSeconds: number | null;
               unselectableReason: string | null;
             }>;
           }>;
@@ -280,8 +282,10 @@ test('coverage collections route marks items missing muxAssetId as non-selectabl
         const videos = payload.collections[0]?.videos ?? [];
         assert.equal(videos[0]?.id, 'video-1');
         assert.equal(videos[0]?.selectable, true);
+        assert.equal(videos[0]?.durationSeconds, 540);
         assert.equal(videos[1]?.id, 'video-2');
         assert.equal(videos[1]?.selectable, false);
+        assert.equal(videos[1]?.durationSeconds, null);
         assert.match(videos[1]?.unselectableReason ?? '', /missing muxassetid/i);
       }
     );
@@ -327,6 +331,7 @@ test('coverage collections route uses GraphQL fallback mappings when REST collec
     if (url === 'https://gateway.test') {
       const body = JSON.parse(String(init?.body ?? '{}')) as { query?: string };
       assert.match(body.query ?? '', /muxVideo\s*\{\s*assetId\s*\}/i);
+      assert.doesNotMatch(body.query ?? '', /\bduration(seconds)?\b/i);
 
       return jsonResponse({
         data: {
@@ -380,6 +385,7 @@ test('coverage collections route uses GraphQL fallback mappings when REST collec
               id: string;
               selectable: boolean;
               muxAssetId: string | null;
+              durationSeconds: number | null;
             }>;
           }>;
         };
@@ -388,6 +394,7 @@ test('coverage collections route uses GraphQL fallback mappings when REST collec
         assert.equal(video?.id, 'video-1');
         assert.equal(video?.selectable, true);
         assert.equal(video?.muxAssetId, 'mux-asset-fallback-1');
+        assert.equal(video?.durationSeconds, null);
       }
     );
   } finally {

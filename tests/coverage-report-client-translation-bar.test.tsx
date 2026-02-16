@@ -12,6 +12,7 @@ test('TranslationActionBar no longer renders translation scope toggle controls',
     <TranslationActionBar
       selectedCount={2}
       languageLabels={['Spanish', 'French']}
+      estimatedCostLabel={null}
       hoveredVideo={null}
       statusLabels={{ human: 'Human', ai: 'AI', none: 'Missing' }}
       isSubmitting={false}
@@ -24,6 +25,38 @@ test('TranslationActionBar no longer renders translation scope toggle controls',
   assert.doesNotMatch(html, /Translate missing only/i);
   assert.doesNotMatch(html, /Translate all/i);
   assert.match(html, /Translate Now/i);
+});
+
+test('TranslationActionBar renders estimated cost and hides it when absent', () => {
+  const withEstimate = renderToStaticMarkup(
+    <TranslationActionBar
+      selectedCount={2}
+      languageLabels={['Spanish']}
+      estimatedCostLabel="Estimated cost: ~$1.23"
+      hoveredVideo={null}
+      statusLabels={{ human: 'Human', ai: 'AI', none: 'Missing' }}
+      isSubmitting={false}
+      isInteractive
+      onClear={() => {}}
+      onTranslate={() => {}}
+    />
+  );
+  assert.match(withEstimate, /Estimated cost:\s*~\$1\.23/i);
+
+  const withoutEstimate = renderToStaticMarkup(
+    <TranslationActionBar
+      selectedCount={0}
+      languageLabels={['Spanish']}
+      estimatedCostLabel={null}
+      hoveredVideo={null}
+      statusLabels={{ human: 'Human', ai: 'AI', none: 'Missing' }}
+      isSubmitting={false}
+      isInteractive
+      onClear={() => {}}
+      onTranslate={() => {}}
+    />
+  );
+  assert.doesNotMatch(withoutEstimate, /Estimated cost:/i);
 });
 
 test('getCoverageJobsQueueRedirectUrl returns queue URL for successful done state only once', () => {
