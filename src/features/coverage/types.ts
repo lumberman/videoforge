@@ -12,6 +12,7 @@ export type CoverageVideoBase = {
   metadataStatus: CoverageStatus;
   thumbnailUrl: string | null;
   watchUrl: string | null;
+  durationSeconds: number | null;
 };
 
 export type CoverageVideoSelectable = CoverageVideoBase & {

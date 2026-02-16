@@ -27,10 +27,15 @@ import {
 import { LanguageGeoSelector } from './LanguageGeoSelector'
 import {
   buildCoverageJobsQueueUrl,
+  getSelectedSelectableVideosInOrder,
   getSelectedVideosInOrder,
   shouldRedirectToJobsQueueAfterCoverageSubmit,
   submitCoverageSelection
 } from './submission';
+import {
+  estimateCoverageTranslateCostUsd,
+  formatEstimatedUsd
+} from './estimate-cost';
 import type { CoverageSubmitResult, CoverageVideo } from './types';
 
 type CoverageStatus = 'human' | 'ai' | 'none'
@@ -283,6 +288,7 @@ function normalizeCollections(
           metadataStatus: video.metadataStatus,
           thumbnailUrl: video.thumbnailUrl,
           watchUrl: video.watchUrl,
+          durationSeconds: video.durationSeconds,
           selectable: true,
           muxAssetId: video.muxAssetId,
           unselectableReason: null,
@@ -299,6 +305,7 @@ function normalizeCollections(
         metadataStatus: video.metadataStatus,
         thumbnailUrl: video.thumbnailUrl,
         watchUrl: video.watchUrl,
+        durationSeconds: video.durationSeconds,
         selectable: false,
         muxAssetId: null,
         unselectableReason:
@@ -886,6 +893,7 @@ function SelectableVideoTile({
 export function TranslationActionBar({
   selectedCount,
   languageLabels,
+  estimatedCostLabel,
   hoveredVideo,
   statusLabels,
   isSubmitting,
@@ -895,6 +903,7 @@ export function TranslationActionBar({
 }: {
   selectedCount: number
   languageLabels: string[]
+  estimatedCostLabel: string | null
   hoveredVideo: HoveredVideoDetails | null
   statusLabels: Record<CoverageStatus, string>
   isSubmitting: boolean
@@ -919,6 +928,9 @@ export function TranslationActionBar({
               {selectedCount} video{selectedCount === 1 ? '' : 's'} selected
             </div>
             <TargetLanguageSummary labels={languageLabels} />
+            {estimatedCostLabel ? (
+              <div className="translation-estimate">{estimatedCostLabel}</div>
+            ) : null}
           </div>
           <div className="translation-controls">
             <button
@@ -1470,6 +1482,22 @@ export function CoverageReportClient({
     selectedLabels.length === 0
       ? [languageOptions[0]?.englishLabel ?? 'Unknown']
       : selectedLabels
+  const selectedVideosForEstimate = useMemo(
+    () => getSelectedSelectableVideosInOrder(cachedCollections, selectedSet),
+    [cachedCollections, selectedSet]
+  )
+  const estimatedCostLabel = useMemo(() => {
+    if (selectedVideosForEstimate.length === 0 || selectedLanguageIds.length === 0) {
+      return null
+    }
+
+    const estimatedUsd = estimateCoverageTranslateCostUsd({
+      videos: selectedVideosForEstimate,
+      selectedLanguageCount: selectedLanguageIds.length
+    })
+
+    return `Estimated cost: ~${formatEstimatedUsd(estimatedUsd)}`
+  }, [selectedLanguageIds.length, selectedVideosForEstimate])
 
   const overallCounts = useMemo(() => {
     return cachedCollections.reduce(
@@ -1809,6 +1837,7 @@ export function CoverageReportClient({
             <TranslationActionBar
               selectedCount={selectedIds.length}
               languageLabels={targetLanguageLabels}
+              estimatedCostLabel={estimatedCostLabel}
               hoveredVideo={hoveredVideo}
               statusLabels={reportConfig.statusLabels}
               isSubmitting={submitState.type === 'submitting'}
@@ -1880,6 +1909,7 @@ export function CoverageReportClient({
         <TranslationActionBar
           selectedCount={selectedIds.length}
           languageLabels={targetLanguageLabels}
+          estimatedCostLabel={estimatedCostLabel}
           hoveredVideo={hoveredVideo}
           statusLabels={reportConfig.statusLabels}
           isSubmitting={submitState.type === 'submitting'}

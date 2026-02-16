@@ -25,6 +25,7 @@ test('fetchCoverageCollections GraphQL fallback query includes muxVideo.assetId 
     if (url === 'https://gateway.test') {
       const body = JSON.parse(String(init?.body ?? '{}')) as { query?: string };
       assert.match(body.query ?? '', /variant\(languageId:\s*\$languageId\)\s*\{[\s\S]*muxVideo\s*\{[\s\S]*assetId/i);
+      assert.doesNotMatch(body.query ?? '', /\bduration(seconds)?\b/i);
 
       return jsonResponse({
         data: {
@@ -70,6 +71,7 @@ test('fetchCoverageCollections GraphQL fallback query includes muxVideo.assetId 
         assert.equal(video?.selectable, true);
         if (video?.selectable) {
           assert.equal(video.muxAssetId, 'mux-asset-contract-1');
+          assert.equal(video.durationSeconds, null);
         }
       }
     );

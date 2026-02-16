@@ -75,6 +75,18 @@ export function getSelectedVideosInOrder(
   return ordered;
 }
 
+export function getSelectedSelectableVideosInOrder(
+  collections: CoverageCollection[],
+  selectedIds: Set<string>
+): Array<CoverageVideo & { selectable: true; muxAssetId: string }> {
+  return getSelectedVideosInOrder(collections, selectedIds).filter(
+    (
+      video
+    ): video is CoverageVideo & { selectable: true; muxAssetId: string } =>
+      video.selectable
+  );
+}
+
 export async function submitCoverageSelection(
   input: SubmitCoverageSelectionInput
 ): Promise<CoverageSubmitResult> {

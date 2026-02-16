@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildCoverageJobsQueueUrl,
+  getSelectedSelectableVideosInOrder,
   getSelectedVideosInOrder,
   shouldRedirectToJobsQueueAfterCoverageSubmit,
   submitCoverageSelection
@@ -17,6 +18,7 @@ function selectableVideo(id: string, muxAssetId: string): CoverageVideo {
     metadataStatus: 'none',
     thumbnailUrl: null,
     watchUrl: null,
+    durationSeconds: null,
     selectable: true,
     muxAssetId,
     unselectableReason: null
@@ -32,6 +34,7 @@ function unmappableVideo(id: string): CoverageVideo {
     metadataStatus: 'none',
     thumbnailUrl: null,
     watchUrl: null,
+    durationSeconds: null,
     selectable: false,
     muxAssetId: null,
     unselectableReason: 'Missing muxAssetId mapping for this item.'
@@ -64,6 +67,35 @@ test('getSelectedVideosInOrder preserves collection order and de-duplicates ids'
   assert.deepEqual(
     ordered.map((video) => video.id),
     ['video-2', 'video-3']
+  );
+});
+
+test('getSelectedSelectableVideosInOrder excludes unmappable items', () => {
+  const collections: CoverageCollection[] = [
+    {
+      id: 'collection-a',
+      title: 'A',
+      label: 'collection',
+      publishedAt: null,
+      videos: [selectableVideo('video-1', 'asset-1'), unmappableVideo('video-2')]
+    },
+    {
+      id: 'collection-b',
+      title: 'B',
+      label: 'collection',
+      publishedAt: null,
+      videos: [selectableVideo('video-3', 'asset-3')]
+    }
+  ];
+
+  const ordered = getSelectedSelectableVideosInOrder(
+    collections,
+    new Set(['video-1', 'video-2', 'video-3'])
+  );
+
+  assert.deepEqual(
+    ordered.map((video) => video.id),
+    ['video-1', 'video-3']
   );
 });
 

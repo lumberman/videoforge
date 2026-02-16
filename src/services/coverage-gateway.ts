@@ -52,13 +52,41 @@ function asMaybeString(value: unknown): string | null {
   return str ? str : null;
 }
 
-function getNestedString(root: RawRecord, path: string[]): string {
+function asMaybeNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function asPositiveDurationSeconds(value: unknown): number | null {
+  const numeric = asMaybeNumber(value);
+  if (numeric === null || numeric <= 0) {
+    return null;
+  }
+  return numeric;
+}
+
+function getNestedValue(root: RawRecord, path: string[]): unknown {
   let cursor: unknown = root;
   for (const segment of path) {
     if (Array.isArray(cursor)) {
       const index = Number.parseInt(segment, 10);
       if (!Number.isInteger(index) || index < 0 || index >= cursor.length) {
-        return '';
+        return undefined;
       }
       cursor = cursor[index];
       continue;
@@ -66,11 +94,15 @@ function getNestedString(root: RawRecord, path: string[]): string {
 
     const next = asRecord(cursor);
     if (!next) {
-      return '';
+      return undefined;
     }
     cursor = next[segment];
   }
-  return asString(cursor);
+  return cursor;
+}
+
+function getNestedString(root: RawRecord, path: string[]): string {
+  return asString(getNestedValue(root, path));
 }
 
 function parseStatus(raw: unknown): CoverageStatus {
@@ -250,6 +282,36 @@ function getMuxAssetIdFromRecord(record: RawRecord): string | null {
   return null;
 }
 
+function getDurationSecondsFromRecord(record: RawRecord): number | null {
+  const directCandidates: unknown[] = [
+    record.durationSeconds,
+    record.duration,
+    record.runtime,
+    record.length,
+    getNestedString(record, ['duration', 'seconds']),
+    getNestedValue(record, ['durationSeconds'])
+  ];
+
+  for (const candidate of directCandidates) {
+    const value = asPositiveDurationSeconds(candidate);
+    if (value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function mergeDurationSeconds(first: number | null, second: number | null): number | null {
+  if (first === null) {
+    return second;
+  }
+  if (second === null) {
+    return first;
+  }
+  return Math.max(first, second);
+}
+
 function toSelectableVideo(base: Omit<CoverageVideoSelectable, 'selectable' | 'unselectableReason' | 'muxAssetId'>, muxAssetId: string): CoverageVideoSelectable {
   return {
     ...base,
@@ -279,6 +341,7 @@ function createVideoFromCoverageRecord(record: RawRecord): CoverageVideo {
   const metadataStatus = parseStatus(record.metadataStatus ?? record.metaStatus);
   const thumbnailUrl = asMaybeString(record.thumbnailUrl);
   const watchUrl = asMaybeString(record.watchUrl);
+  const durationSeconds = getDurationSecondsFromRecord(record);
 
   const base = {
     id,
@@ -287,7 +350,8 @@ function createVideoFromCoverageRecord(record: RawRecord): CoverageVideo {
     voiceoverStatus,
     metadataStatus,
     thumbnailUrl,
-    watchUrl
+    watchUrl,
+    durationSeconds
   };
 
   const muxAssetId = getMuxAssetIdFromRecord(record);
@@ -471,7 +535,8 @@ function createGraphqlVideo(record: RawRecord): CoverageVideo {
     voiceoverStatus: statusFromVoiceoverVariant(record.variant),
     metadataStatus: metadataStatusFromRecord(record),
     thumbnailUrl: getThumbnailUrl(record),
-    watchUrl: resolveWatchUrl(record)
+    watchUrl: resolveWatchUrl(record),
+    durationSeconds: getDurationSecondsFromRecord(record)
   };
 
   const muxAssetId = getMuxAssetIdFromRecord(record);
@@ -490,7 +555,8 @@ function mergeVideos(first: CoverageVideo, second: CoverageVideo): CoverageVideo
     voiceoverStatus: mergeStatus(first.voiceoverStatus, second.voiceoverStatus),
     metadataStatus: mergeStatus(first.metadataStatus, second.metadataStatus),
     thumbnailUrl: first.thumbnailUrl ?? second.thumbnailUrl,
-    watchUrl: first.watchUrl ?? second.watchUrl
+    watchUrl: first.watchUrl ?? second.watchUrl,
+    durationSeconds: mergeDurationSeconds(first.durationSeconds, second.durationSeconds)
   };
 
   if (first.selectable) {
