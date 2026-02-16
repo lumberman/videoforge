@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildCoverageJobsQueueUrl,
   getSelectedVideosInOrder,
+  shouldRedirectToJobsQueueAfterCoverageSubmit,
   submitCoverageSelection
 } from '../src/features/coverage/submission';
 import type { CoverageCollection, CoverageVideo } from '../src/features/coverage/types';
@@ -100,4 +102,45 @@ test('submitCoverageSelection returns deterministic mixed-result summary', async
   );
   assert.equal(result.items[0]?.jobId, 'job-asset-1');
   assert.match(result.items[2]?.reason ?? '', /gateway timeout/i);
+});
+
+test('shouldRedirectToJobsQueueAfterCoverageSubmit only redirects when jobs were created', () => {
+  assert.equal(
+    shouldRedirectToJobsQueueAfterCoverageSubmit({
+      created: 1,
+      failed: 0,
+      skipped: 0,
+      items: []
+    }),
+    true
+  );
+
+  assert.equal(
+    shouldRedirectToJobsQueueAfterCoverageSubmit({
+      created: 0,
+      failed: 2,
+      skipped: 1,
+      items: []
+    }),
+    false
+  );
+});
+
+test('buildCoverageJobsQueueUrl includes deterministic coverage queue params', () => {
+  const url = buildCoverageJobsQueueUrl({
+    created: 3,
+    failed: 1,
+    skipped: 0
+  });
+
+  assert.match(
+    url,
+    /^\/dashboard\/jobs\?/
+  );
+
+  const params = new URLSearchParams(url.split('?')[1] ?? '');
+  assert.equal(params.get('from'), 'coverage');
+  assert.equal(params.get('created'), '3');
+  assert.equal(params.get('failed'), '1');
+  assert.equal(params.get('skipped'), '0');
 });

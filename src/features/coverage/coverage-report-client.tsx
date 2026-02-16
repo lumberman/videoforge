@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Check,
@@ -25,7 +26,9 @@ import {
 } from './collection-cache'
 import { LanguageGeoSelector } from './LanguageGeoSelector'
 import {
+  buildCoverageJobsQueueUrl,
   getSelectedVideosInOrder,
+  shouldRedirectToJobsQueueAfterCoverageSubmit,
   submitCoverageSelection
 } from './submission';
 import type { CoverageSubmitResult, CoverageVideo } from './types';
@@ -102,6 +105,11 @@ type SubmitState =
   | { type: 'done'; result: CoverageSubmitResult }
   | { type: 'error'; message: string };
 
+type CoverageJobsQueueRedirectInput = {
+  submitState: SubmitState
+  hasRedirected: boolean
+}
+
 const VIDEO_LABEL_DISPLAY: Record<string, string> = {
   collection: 'Collection',
   featureFilm: 'Feature Film',
@@ -151,6 +159,29 @@ function clearCachedCollections(languageId: string): void {
   const storage = getSessionStorage();
   if (!storage) return;
   clearCachedCollectionsFromStorage(languageId, storage);
+}
+
+export function getCoverageJobsQueueRedirectUrl({
+  submitState,
+  hasRedirected
+}: CoverageJobsQueueRedirectInput): string | null {
+  if (hasRedirected) {
+    return null
+  }
+
+  if (submitState.type !== 'done') {
+    return null
+  }
+
+  if (!shouldRedirectToJobsQueueAfterCoverageSubmit(submitState.result)) {
+    return null
+  }
+
+  return buildCoverageJobsQueueUrl({
+    created: submitState.result.created,
+    failed: submitState.result.failed,
+    skipped: submitState.result.skipped
+  })
 }
 
 /**
@@ -904,9 +935,10 @@ export function TranslationActionBar({
               className="translation-secondary"
               onClick={onClear}
               disabled={isSubmitting}
+              aria-label="Cancel and clear selection"
+              title="Cancel and clear selection"
             >
               <XCircle className="icon" aria-hidden="true" />
-              Cancel / Clear selection
             </button>
           </div>
         </div>
@@ -1327,6 +1359,7 @@ export function CoverageReportClient({
   const [submitState, setSubmitState] = useState<SubmitState>({ type: 'idle' });
   const [now, setNow] = useState(() => Date.now())
   const loadMoreTimeoutRef = useRef<number | null>(null)
+  const hasQueuedJobsRedirectRef = useRef(false)
   const languageKey = selectedLanguageIds.join(',')
   const previousLanguageRef = useRef(languageKey)
 
@@ -1564,6 +1597,7 @@ export function CoverageReportClient({
       return;
     }
 
+    hasQueuedJobsRedirectRef.current = false
     setSubmitState({ type: 'submitting' });
 
     const selectedVideos = getSelectedVideosInOrder(
@@ -1607,6 +1641,19 @@ export function CoverageReportClient({
         .map((item) => item.mediaId)
     );
   }, [cachedCollections, selectedIds, selectedLanguageIds, submitState.type])
+
+  useEffect(() => {
+    const nextUrl = getCoverageJobsQueueRedirectUrl({
+      submitState,
+      hasRedirected: hasQueuedJobsRedirectRef.current
+    })
+    if (!nextUrl) {
+      return
+    }
+
+    hasQueuedJobsRedirectRef.current = true
+    window.location.assign(nextUrl)
+  }, [submitState])
 
   const toggleExpanded = useCallback((collectionId: string) => {
     setExpandedCollections((prev) =>
@@ -1675,23 +1722,32 @@ export function CoverageReportClient({
           </div>
         </div>
         <div className="header-diagram">
-          <CoverageBar
-            counts={overallCounts}
-            activeFilter={interactionMode === 'explore' ? filter : 'all'}
-            onFilter={setFilter}
-            onSelectStatus={isSelectMode ? handleSelectByStatus : undefined}
-            mode={interactionMode}
-            labels={reportConfig.segmentLabels}
-            ariaLabel={reportConfig.ariaLabel}
-          />
+          <div className="header-diagram-menu">
+            <Link href="/jobs" className="control-value header-menu-link">
+              Queue
+            </Link>
+          </div>
         </div>
       </header>
 
       <section className="language-panel-section">
-        <LanguageGeoSelector
-          value={selectedLanguageIds}
-          options={languageOptions}
-        />
+        <div className="language-panel-layout">
+          <LanguageGeoSelector
+            value={selectedLanguageIds}
+            options={languageOptions}
+          />
+          <div className="language-panel-diagram">
+            <CoverageBar
+              counts={overallCounts}
+              activeFilter={interactionMode === 'explore' ? filter : 'all'}
+              onFilter={setFilter}
+              onSelectStatus={isSelectMode ? handleSelectByStatus : undefined}
+              mode={interactionMode}
+              labels={reportConfig.segmentLabels}
+              ariaLabel={reportConfig.ariaLabel}
+            />
+          </div>
+        </div>
       </section>
 
       {gatewayConfigured && !errorMessage && (

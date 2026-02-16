@@ -7,6 +7,20 @@ import { NewJobForm } from './new-job-form';
 
 export const dynamic = 'force-dynamic';
 
+type SearchParamValue = string | string[] | undefined;
+
+type SearchParamsInput = Record<string, SearchParamValue>;
+
+type PageProps = {
+  searchParams?: Promise<SearchParamsInput>;
+};
+
+type CoverageQueueFlash = {
+  created: number;
+  failed: number;
+  skipped: number;
+};
+
 function formatDate(iso?: string): string {
   if (!iso) {
     return 'n/a';
@@ -14,7 +28,56 @@ function formatDate(iso?: string): string {
   return new Date(iso).toLocaleString();
 }
 
-export default async function JobsPage() {
+async function resolveSearchParams(
+  searchParams?: Promise<SearchParamsInput>
+): Promise<SearchParamsInput> {
+  if (!searchParams) return {};
+  return await searchParams;
+}
+
+function getSingleSearchParam(value: SearchParamValue): string | null {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return null;
+}
+
+function parseNonNegativeInteger(value: SearchParamValue): number | null {
+  const scalar = getSingleSearchParam(value);
+  if (!scalar) return null;
+  if (!/^\d+$/.test(scalar)) return null;
+
+  const parsed = Number(scalar);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function parseCoverageQueueFlash(
+  searchParams: SearchParamsInput
+): CoverageQueueFlash | null {
+  const source = getSingleSearchParam(searchParams.from);
+  if (source !== 'coverage') {
+    return null;
+  }
+
+  const created = parseNonNegativeInteger(searchParams.created);
+  const failed = parseNonNegativeInteger(searchParams.failed);
+  const skipped = parseNonNegativeInteger(searchParams.skipped);
+
+  if (created === null || failed === null || skipped === null) {
+    return null;
+  }
+
+  return { created, failed, skipped };
+}
+
+export default async function JobsPage({ searchParams }: PageProps) {
+  const normalizedSearchParams = await resolveSearchParams(searchParams);
+  const coverageQueueFlash = parseCoverageQueueFlash(normalizedSearchParams);
   const jobs = await listJobs();
   const warnings = getRuntimeWarnings();
 
@@ -28,6 +91,16 @@ export default async function JobsPage() {
               <li key={warning}>{warning}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {coverageQueueFlash && (
+        <section className="card" role="status" aria-live="polite" style={{ borderColor: '#6ee7b7' }}>
+          <strong>Coverage submission complete</strong>
+          <p className="small" style={{ marginBottom: 0 }}>
+            Created: {coverageQueueFlash.created} · Failed: {coverageQueueFlash.failed} · Skipped:{' '}
+            {coverageQueueFlash.skipped}
+          </p>
         </section>
       )}
 

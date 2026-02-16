@@ -23,11 +23,36 @@ type SubmitCoverageSelectionInput = {
   createJob: (input: CreateJobInput) => Promise<CreateJobOutput>;
 };
 
+export type CoverageJobsQueueSummary = {
+  created: number;
+  failed: number;
+  skipped: number;
+};
+
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
   return 'Failed to create job.';
+}
+
+export function shouldRedirectToJobsQueueAfterCoverageSubmit(
+  result: CoverageSubmitResult
+): boolean {
+  return result.created > 0;
+}
+
+export function buildCoverageJobsQueueUrl(
+  summary: CoverageJobsQueueSummary
+): string {
+  const params = new URLSearchParams({
+    from: 'coverage',
+    created: String(summary.created),
+    failed: String(summary.failed),
+    skipped: String(summary.skipped)
+  });
+
+  return `/dashboard/jobs?${params.toString()}`;
 }
 
 export function getSelectedVideosInOrder(
