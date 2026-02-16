@@ -76,4 +76,5 @@ The root cause was error-classification logic that did not account for parse-tim
 - Keep error classes narrow and intentional so status mapping cannot drift silently.
 
 ## Related Issues
-- Related workflow hardening: [pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md](./pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md)
+- Related workflow hardening: `/videoforge/docs/solutions/logic-errors/pending-jobs-and-lost-step-context-video-enrichment-workflow-20260214.md`
+- Related coverage gateway schema drift fix: `/videoforge/docs/solutions/integration-issues/graphql-schema-drift-and-muxasset-mapping-coverage-gateway-20260215.md`

@@ -1,6 +1,6 @@
 import './globals.css';
-import Link from 'next/link';
-import type { Metadata, Route } from 'next';
+import type { Metadata } from 'next';
+import { GlobalShell } from './global-shell';
 
 export const metadata: Metadata = {
   title: 'AI Video Enrichment Platform',
@@ -15,23 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <header className="container" style={{ paddingBottom: 0 }}>
-          <div
-            className="card"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <strong>AI Video Enrichment Platform</strong>
-            <nav style={{ display: 'flex', gap: 12 }}>
-              <Link href="/dashboard/jobs">Jobs</Link>
-              <Link href={'/dashboard/coverage' as Route}>Coverage</Link>
-            </nav>
-          </div>
-        </header>
-        {children}
+        <GlobalShell>{children}</GlobalShell>
       </body>
     </html>
   );

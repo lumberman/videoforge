@@ -116,6 +116,110 @@ test('coverage languages route falls back to NEXT_STAGE_GATEWAY_URL when primary
   assert.match(calledUrls[0] ?? '', /^https:\/\/stage\.gateway\.test/);
 });
 
+test('coverage languages route falls back to GraphQL when REST returns empty and uses schema-safe native label query', async () => {
+  const originalFetch = globalThis.fetch;
+  const calledUrls: string[] = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    calledUrls.push(url);
+
+    if (url.endsWith('/api/languages')) {
+      return jsonResponse({ languages: [] });
+    }
+
+    if (url === 'https://gateway.test') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { query?: string };
+      assert.match(body.query ?? '', /nativeName:\s*name\(primary:\s*true\)/i);
+      assert.doesNotMatch(body.query ?? '', /\bnativeName\s*\{/);
+
+      return jsonResponse({
+        data: {
+          languages: [
+            {
+              id: '529',
+              name: [{ value: 'English' }],
+              nativeName: [{ value: 'English' }]
+            }
+          ]
+        }
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+      },
+      async () => {
+        const languagesRoute = await importFresh<
+          typeof import('../src/app/api/coverage/languages/route')
+        >('../src/app/api/coverage/languages/route');
+
+        const response = await languagesRoute.GET();
+        assert.equal(response.status, 200);
+
+        const payload = (await response.json()) as {
+          languages: Array<{ id: string; englishLabel: string; nativeLabel: string }>;
+        };
+
+        assert.equal(payload.languages.length, 1);
+        assert.equal(payload.languages[0]?.id, '529');
+        assert.equal(payload.languages[0]?.englishLabel, 'English');
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(calledUrls.some((url) => url.endsWith('/api/languages')), true);
+  assert.equal(calledUrls.includes('https://gateway.test'), true);
+});
+
+test('coverage languages route returns 502 when GraphQL fallback returns schema errors', async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+
+    if (url.endsWith('/api/languages')) {
+      return jsonResponse({ languages: [] });
+    }
+
+    if (url === 'https://gateway.test') {
+      return jsonResponse({
+        errors: [{ message: 'Cannot query field "nativeName" on type "Language".' }]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+      },
+      async () => {
+        const languagesRoute = await importFresh<
+          typeof import('../src/app/api/coverage/languages/route')
+        >('../src/app/api/coverage/languages/route');
+
+        const response = await languagesRoute.GET();
+        assert.equal(response.status, 502);
+
+        const payload = (await response.json()) as { error?: string };
+        assert.match(payload.error ?? '', /Cannot query field "nativeName"/i);
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('coverage collections route marks items missing muxAssetId as non-selectable', async () => {
   const originalFetch = globalThis.fetch;
 
@@ -206,6 +310,92 @@ test('coverage collections route rejects oversized languageIds input', async () 
       assert.match(payload.error ?? '', /at most 20/i);
     }
   );
+});
+
+test('coverage collections route uses GraphQL fallback mappings when REST collections endpoint is unavailable', async () => {
+  const originalFetch = globalThis.fetch;
+  const calledUrls: string[] = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    calledUrls.push(url);
+
+    if (url.includes('/api/coverage/collections')) {
+      return jsonResponse({ error: 'not found' }, 404);
+    }
+
+    if (url === 'https://gateway.test') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { query?: string };
+      assert.match(body.query ?? '', /muxVideo\s*\{\s*assetId\s*\}/i);
+
+      return jsonResponse({
+        data: {
+          videos: [
+            {
+              id: 'collection-1',
+              label: 'series',
+              publishedAt: '2026-01-01T00:00:00.000Z',
+              title: [{ value: 'Collection' }],
+              children: [
+                {
+                  id: 'video-1',
+                  title: [{ value: 'Video with mapping' }],
+                  subtitles: [],
+                  images: [],
+                  variant: {
+                    slug: 'watch/en',
+                    muxVideo: {
+                      assetId: 'mux-asset-fallback-1'
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+      },
+      async () => {
+        const collectionsRoute = await importFresh<
+          typeof import('../src/app/api/coverage/collections/route')
+        >('../src/app/api/coverage/collections/route');
+
+        const response = await collectionsRoute.GET(
+          new Request('http://localhost/api/coverage/collections?languageIds=en')
+        );
+
+        assert.equal(response.status, 200);
+        const payload = (await response.json()) as {
+          collections: Array<{
+            videos: Array<{
+              id: string;
+              selectable: boolean;
+              muxAssetId: string | null;
+            }>;
+          }>;
+        };
+
+        const video = payload.collections[0]?.videos[0];
+        assert.equal(video?.id, 'video-1');
+        assert.equal(video?.selectable, true);
+        assert.equal(video?.muxAssetId, 'mux-asset-fallback-1');
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(calledUrls.some((url) => url.includes('/api/coverage/collections')), true);
+  assert.equal(calledUrls.includes('https://gateway.test'), true);
 });
 
 test('coverage collections route fails explicitly when fallback payload has no muxAssetId mappings', async () => {

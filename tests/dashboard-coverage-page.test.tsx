@@ -23,7 +23,7 @@ test('coverage page renders gateway configuration guidance when env vars are mis
         );
 
         const html = renderToStaticMarkup(await pageModule.default({}));
-        assert.match(html, /Coverage gateway is not configured/i);
+        assert.match(html, /NEXT_PUBLIC_GATEWAY_URL/i);
       }
     );
   });
@@ -68,8 +68,50 @@ test('coverage page renders empty state when gateway returns no collections', as
           >('../src/app/dashboard/coverage/page');
 
           const html = renderToStaticMarkup(await pageModule.default({}));
-          assert.match(html, /Coverage Reporting/i);
-          assert.match(html, /No coverage records match the current filters\./i);
+          assert.match(html, /Coverage Report/i);
+          assert.match(html, /No videos match this filter\./i);
+        }
+      );
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('coverage page renders explicit schema error when language fallback query fails', async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+
+    if (url.endsWith('/api/languages')) {
+      return jsonResponse({ languages: [] });
+    }
+
+    if (url === 'https://gateway.test') {
+      return jsonResponse({
+        errors: [{ message: 'Cannot query field "nativeName" on type "Language".' }]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withTempDataEnv('dashboard-coverage-schema-error', async () => {
+      await withEnv(
+        {
+          NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        },
+        async () => {
+          const pageModule = await importFresh<
+            typeof import('../src/app/dashboard/coverage/page')
+          >('../src/app/dashboard/coverage/page');
+
+          const html = renderToStaticMarkup(await pageModule.default({}));
+          assert.match(html, /Cannot query field/i);
+          assert.match(html, /nativeName/i);
+          assert.match(html, /Language/i);
         }
       );
     });

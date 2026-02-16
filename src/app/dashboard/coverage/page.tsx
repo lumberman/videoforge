@@ -66,7 +66,7 @@ export default async function CoveragePage({
   }
 
   return (
-    <main className="container grid">
+    <main>
       <CoverageReportClient
         gatewayConfigured={gatewayConfigured}
         initialLanguages={initialLanguages}

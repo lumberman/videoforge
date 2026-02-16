@@ -51,3 +51,6 @@ Implemented a strict but graceful dependency model:
 - `/videoforge/tests/mux-ai-adapter.test.ts`
 - `/videoforge/tests/workflow-state.test.ts`
 - `/videoforge/tests/api-jobs-contract.test.ts`
+
+## Related Issues
+- Coverage GraphQL schema drift and fallback mapping: `/videoforge/docs/solutions/integration-issues/graphql-schema-drift-and-muxasset-mapping-coverage-gateway-20260215.md`

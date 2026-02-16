@@ -3,6 +3,7 @@
 This file contains implementation guidance and engineering rules for agents.
 
 See `README.md` for complete product vision, architecture, and technical overview.
+See `/videoforge/docs/critical-patterns.md` for required incident-prevention patterns.
 
 ---
 

@@ -11,6 +11,7 @@ import type {
 type RawRecord = Record<string, unknown>;
 
 const AI_MARKERS = ['ai', 'auto', 'generated', 'machine', 'mux'];
+const ENGLISH_LANGUAGE_ID = '529';
 
 const COVERAGE_GRAPHQL_HEADERS = {
   'content-type': 'application/json',
@@ -231,9 +232,11 @@ function getMuxAssetIdFromRecord(record: RawRecord): string | null {
     record.assetId,
     record.mux_asset_id,
     record.mux_asset,
+    getNestedString(record, ['muxVideo', 'assetId']),
     getNestedString(record, ['mux', 'assetId']),
     getNestedString(record, ['muxAsset', 'id']),
     getNestedString(record, ['variant', 'muxAssetId']),
+    getNestedString(record, ['variant', 'muxVideo', 'assetId']),
     getNestedString(record, ['playback', 'assetId'])
   ];
 
@@ -611,10 +614,10 @@ async function fetchCoverageLanguagesFromGraphql(baseUrl: string): Promise<Cover
     query CoverageLanguages {
       languages(limit: 2500) {
         id
-        name {
+        name(languageId: "${ENGLISH_LANGUAGE_ID}") {
           value
         }
-        nativeName {
+        nativeName: name(primary: true) {
           value
         }
       }
@@ -655,6 +658,9 @@ async function fetchCoverageCollectionsFromGraphql(
         }
         variant(languageId: $languageId) {
           slug
+          muxVideo {
+            assetId
+          }
           videoEdition {
             name
           }
@@ -684,6 +690,9 @@ async function fetchCoverageCollectionsFromGraphql(
           }
           variant(languageId: $languageId) {
             slug
+            muxVideo {
+              assetId
+            }
             videoEdition {
               name
             }
