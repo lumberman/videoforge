@@ -499,3 +499,77 @@ test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', a
     }
   );
 });
+
+test('mux adapter preserves primitives fetch failure when workflows exports have no transcription function', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              throw new Error('No transcript track found for playback id');
+            }
+          };
+        }
+
+        if (moduleName === '@mux/ai/workflows') {
+          return {
+            generateChapters: async () => []
+          };
+        }
+
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-no-workflow-transcribe'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
+            assert.match(error.message, /fetchTranscriptForAsset threw an exception/i);
+            assert.match(error.message, /No transcript track found for playback id/i);
+            assert.doesNotMatch(error.message, /none of \[transcribe/i);
+            return true;
+          }
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});

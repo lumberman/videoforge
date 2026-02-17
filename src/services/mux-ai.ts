@@ -921,11 +921,13 @@ export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcrip
     return primitiveTranscript;
   }
 
+  let primitiveFetchError: MuxAiError | undefined;
   let primitiveFetchTranscript: Transcript | undefined;
   try {
     primitiveFetchTranscript = await transcribeWithPrimitiveFetch(primitives, muxAssetId);
   } catch (error) {
     if (isMuxAiError(error)) {
+      primitiveFetchError = error;
       console.warn(
         `[mux-ai][optional-fallback] operation="primitives transcription fetch" code="${error.code}" message="${error.message}"`
       );
@@ -938,10 +940,22 @@ export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcrip
   }
 
   const workflows = await importMuxModule('@mux/ai/workflows', 'workflows');
+  const workflowCandidates = ['transcribe', 'transcriptionWorkflow', 'runTranscriptionWorkflow'];
+  const hasWorkflowTranscription = Boolean(getFunction(workflows, workflowCandidates));
+  if (!hasWorkflowTranscription) {
+    if (primitiveFetchError) {
+      throw primitiveFetchError;
+    }
+    throw toOperationFailed(
+      'transcription',
+      `No supported transcription export found in @mux/ai/primitives or @mux/ai/workflows. Tried workflows exports [${workflowCandidates.join(', ')}].`
+    );
+  }
+
   return callMuxFn({
     moduleRef: workflows,
     operation: 'workflow transcription',
-    candidates: ['transcribe', 'transcriptionWorkflow', 'runTranscriptionWorkflow'],
+    candidates: workflowCandidates,
     args: [muxAssetId],
     parser: isTranscript
   });
