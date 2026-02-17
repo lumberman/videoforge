@@ -2455,4 +2455,36 @@ html[data-coverage-loading="true"] .collections::after {
     max-height: calc(100vh - 24px);
     padding: 14px;
   }
+
+  .translation-bar {
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: auto;
+    min-height: 0;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-bottom) + 24px));
+    padding: 12px 14px;
+    overflow-y: auto;
+  }
+
+  .translation-view {
+    width: 100%;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .translation-controls {
+    width: 100%;
+  }
+
+  .translation-primary {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .translation-toast-wrap {
+    position: static;
+    margin-bottom: 10px;
+  }
 }
