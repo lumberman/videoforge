@@ -19,6 +19,16 @@ const COVERAGE_GRAPHQL_HEADERS = {
   'x-graphql-client-version': process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? ''
 };
 
+const COLLECTIONS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const COLLECTIONS_CACHE_MAX_KEYS = 100;
+
+type CollectionsCacheEntry = {
+  collections: CoverageCollection[];
+  expiresAt: number;
+};
+
+const collectionsCache = new Map<string, CollectionsCacheEntry>();
+
 class CoverageGatewayError extends Error {
   status: number;
 
@@ -30,6 +40,50 @@ class CoverageGatewayError extends Error {
 
 function normalizeBaseUrl(value: string): string {
   return value.replace(/\/$/, '');
+}
+
+function buildCollectionsCacheKey(baseUrl: string, languageIds: string[]): string {
+  return `${normalizeBaseUrl(baseUrl)}|${[...languageIds].sort().join(',')}`;
+}
+
+function readCollectionsCache(
+  key: string,
+  now: number = Date.now()
+): CoverageCollection[] | null {
+  const entry = collectionsCache.get(key);
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.expiresAt <= now) {
+    collectionsCache.delete(key);
+    return null;
+  }
+
+  // Refresh insertion order to keep most recently used entries hot.
+  collectionsCache.delete(key);
+  collectionsCache.set(key, entry);
+  return entry.collections;
+}
+
+function writeCollectionsCache(
+  key: string,
+  collections: CoverageCollection[],
+  now: number = Date.now()
+): void {
+  collectionsCache.delete(key);
+  collectionsCache.set(key, {
+    collections,
+    expiresAt: now + COLLECTIONS_CACHE_TTL_MS
+  });
+
+  while (collectionsCache.size > COLLECTIONS_CACHE_MAX_KEYS) {
+    const oldestKey = collectionsCache.keys().next().value as string | undefined;
+    if (!oldestKey) {
+      break;
+    }
+    collectionsCache.delete(oldestKey);
+  }
 }
 
 function asRecord(value: unknown): RawRecord | null {
@@ -810,11 +864,21 @@ export async function fetchCoverageLanguages(baseUrl: string): Promise<CoverageL
 
 export async function fetchCoverageCollections(
   baseUrl: string,
-  languageIds: string[]
+  languageIds: string[],
+  options?: { forceRefresh?: boolean }
 ): Promise<CoverageCollection[]> {
   const normalizedLanguageIds = [...new Set(languageIds.map((id) => id.trim()).filter(Boolean))];
   if (normalizedLanguageIds.length === 0) {
     return [];
+  }
+
+  const forceRefresh = options?.forceRefresh === true;
+  const cacheKey = buildCollectionsCacheKey(baseUrl, normalizedLanguageIds);
+  if (!forceRefresh) {
+    const cached = readCollectionsCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
   }
 
   const url = new URL(`${normalizeBaseUrl(baseUrl)}/api/coverage/collections`);
@@ -825,7 +889,9 @@ export async function fetchCoverageCollections(
       method: 'GET',
       headers: { 'content-type': 'application/json' }
     });
-    return normalizeCoverageCollectionsFromRest(payload);
+    const collections = normalizeCoverageCollectionsFromRest(payload);
+    writeCollectionsCache(cacheKey, collections);
+    return collections;
   } catch (error) {
     if (!(error instanceof CoverageGatewayError) || error.status !== 404) {
       throw error;
@@ -847,5 +913,6 @@ export async function fetchCoverageCollections(
     );
   }
 
+  writeCollectionsCache(cacheKey, fallbackCollections);
   return fallbackCollections;
 }

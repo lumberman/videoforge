@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
 type CoveragePageSearchParams = {
   languageId?: string;
   languageIds?: string;
+  refresh?: string;
 };
 
 function parseRequestedLanguageIds(raw: string | undefined): string[] {
@@ -57,7 +58,10 @@ export default async function CoveragePage({
       }
 
       if (initialSelectedLanguageIds.length > 0) {
-        initialCollections = await fetchCoverageCollections(baseUrl, initialSelectedLanguageIds);
+        const forceRefresh = Boolean(resolvedSearchParams?.refresh?.trim());
+        initialCollections = await fetchCoverageCollections(baseUrl, initialSelectedLanguageIds, {
+          forceRefresh
+        });
       }
     } catch (error) {
       initialErrorMessage =

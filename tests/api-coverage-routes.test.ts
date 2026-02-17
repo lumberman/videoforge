@@ -375,7 +375,7 @@ test('coverage collections route uses GraphQL fallback mappings when REST collec
         >('../src/app/api/coverage/collections/route');
 
         const response = await collectionsRoute.GET(
-          new Request('http://localhost/api/coverage/collections?languageIds=en')
+          new Request('http://localhost/api/coverage/collections?languageIds=en-unmapped')
         );
 
         assert.equal(response.status, 200);

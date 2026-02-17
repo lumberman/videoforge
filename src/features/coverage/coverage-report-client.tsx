@@ -16,15 +16,6 @@ import {
   XCircle
 } from 'lucide-react'
 
-import {
-  CACHE_TTL_MS,
-  clearCachedCollections as clearCachedCollectionsFromStorage,
-  readCacheMeta as readCacheMetaFromStorage,
-  readCachedCollections as readCachedCollectionsFromStorage,
-  type CollectionsCacheMeta,
-  type SessionStorageLike,
-  writeCachedCollections as writeCachedCollectionsToStorage
-} from './collection-cache'
 import { LanguageGeoSelector } from './LanguageGeoSelector'
 import {
   buildCoverageJobsQueueUrl,
@@ -179,44 +170,6 @@ const VIDEO_LABEL_DISPLAY: Record<string, string> = {
 const SESSION_MODE_KEY = 'ai-media-coverage-mode'
 const SESSION_REPORT_KEY = 'ai-media-coverage-report'
 const COLLECTIONS_PER_BATCH = 200
-
-function getSessionStorage(): SessionStorageLike | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return window.sessionStorage;
-}
-
-function readCachedCollections(languageId: string): ClientCollection[] | null {
-  const storage = getSessionStorage();
-  if (!storage) return null;
-  return readCachedCollectionsFromStorage<ClientCollection>(languageId, storage);
-}
-
-function readCacheMeta(languageId: string): CollectionsCacheMeta | null {
-  const storage = getSessionStorage();
-  if (!storage) return null;
-  return readCacheMetaFromStorage(languageId, storage);
-}
-
-function writeCachedCollections(
-  languageId: string,
-  collections: ClientCollection[]
-): CollectionsCacheMeta | null {
-  const storage = getSessionStorage();
-  if (!storage) return null;
-  return writeCachedCollectionsToStorage<ClientCollection>(
-    languageId,
-    collections,
-    storage
-  );
-}
-
-function clearCachedCollections(languageId: string): void {
-  const storage = getSessionStorage();
-  if (!storage) return;
-  clearCachedCollectionsFromStorage(languageId, storage);
-}
 
 export function getCoverageJobsQueueRedirectUrl({
   submitState,
@@ -383,37 +336,6 @@ export function buildUnselectableVideoSubmitError(
     details: [`${video.title} (${video.id}) · ${reason}`],
     nonce: Date.now()
   }
-}
-
-/**
- * Formats a duration in milliseconds into a short human-readable string.
- */
-function formatDuration(ms: number): string {
-  if (ms <= 0) return 'now'
-  const totalMinutes = Math.ceil(ms / 60000)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-  return `${minutes}m`
-}
-
-/**
- * Formats a timestamp into a short "x ago" string.
- */
-function formatTimeAgo(timestamp: number, now: number): string {
-  const diff = Math.max(0, now - timestamp)
-  const totalMinutes = Math.floor(diff / 60000)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ago`
-  }
-  if (totalMinutes > 0) {
-    return `${totalMinutes}m ago`
-  }
-  return 'just now'
 }
 
 function defaultMetaForStatus(status: CoverageStatus): MetaCompleteness {
@@ -1665,9 +1587,6 @@ export function CoverageReportClient({
   const [reportType, setReportType] = useSessionReportType('subtitles')
   const [mode, setMode] = useSessionMode('explore')
   const [filter, setFilter] = useState<CoverageFilter>('all')
-  const [cachedCollections, setCachedCollections] =
-    useState<ClientCollection[]>(collections)
-  const [cacheMeta, setCacheMeta] = useState<CollectionsCacheMeta | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [hoveredVideo, setHoveredVideo] = useState<HoveredVideoDetails | null>(
     null
@@ -1680,11 +1599,8 @@ export function CoverageReportClient({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>({ type: 'idle' });
   const [videoQaDebugState, setVideoQaDebugState] = useState<VideoQaDebugState | null>(null)
-  const [now, setNow] = useState(() => Date.now())
   const loadMoreTimeoutRef = useRef<number | null>(null)
   const hasQueuedJobsRedirectRef = useRef(false)
-  const languageKey = selectedLanguageIds.join(',')
-  const previousLanguageRef = useRef(languageKey)
 
   const reportConfig = REPORT_CONFIG[reportType]
   const isSubtitleReport = reportType === 'subtitles'
@@ -1701,65 +1617,12 @@ export function CoverageReportClient({
   }, []);
 
   useEffect(() => {
-    const previousLanguageId = previousLanguageRef.current
-    if (previousLanguageId !== languageKey) {
-      clearCachedCollections(previousLanguageId)
-      setCacheMeta(null)
-      previousLanguageRef.current = languageKey
-    }
-  }, [languageKey])
-
-  useEffect(() => {
-    const cached = readCachedCollections(languageKey)
-    const meta = readCacheMeta(languageKey)
-    if (cached) {
-      if (collections.length > cached.length) {
-        setCachedCollections(collections)
-        const nextMeta = writeCachedCollections(languageKey, collections)
-        setCacheMeta(
-          nextMeta ?? {
-            lastUpdated: Date.now(),
-            expiresAt: Date.now() + CACHE_TTL_MS
-          }
-        )
-      } else {
-        setCachedCollections(cached)
-        setCacheMeta(
-          meta ?? {
-            lastUpdated: Date.now(),
-            expiresAt: Date.now() + CACHE_TTL_MS
-          }
-        )
-      }
-      return
-    }
-    setCachedCollections(collections)
-    const nextMeta = writeCachedCollections(languageKey, collections)
-    setCacheMeta(
-      nextMeta ?? {
-        lastUpdated: Date.now(),
-        expiresAt: Date.now() + CACHE_TTL_MS
-      }
-    )
-  }, [collections, languageKey])
-
-  useEffect(() => {
     return () => {
       if (loadMoreTimeoutRef.current) {
         window.clearTimeout(loadMoreTimeoutRef.current)
       }
     }
   }, [])
-
-  useEffect(() => {
-    if (!cacheMeta?.expiresAt) return
-    const interval = window.setInterval(() => {
-      setNow(Date.now())
-    }, 60000)
-    return () => {
-      window.clearInterval(interval)
-    }
-  }, [cacheMeta?.expiresAt])
 
   useEffect(() => {
     if (!isSelectMode && selectedIds.length > 0) {
@@ -1795,13 +1658,13 @@ export function CoverageReportClient({
       : selectedLabels
   const selectedVideosForEstimate = useMemo(
     () =>
-      getSelectedVideosInOrder(cachedCollections, selectedSet).filter(
+      getSelectedVideosInOrder(collections, selectedSet).filter(
         (
           video
         ): video is CoverageVideo & { selectable: true; muxAssetId: string } =>
           video.selectable
       ),
-    [cachedCollections, selectedSet]
+    [collections, selectedSet]
   )
   const estimatedCostLabel = useMemo(() => {
     if (selectedVideosForEstimate.length === 0 || selectedLanguageIds.length === 0) {
@@ -1817,7 +1680,7 @@ export function CoverageReportClient({
   }, [selectedLanguageIds.length, selectedVideosForEstimate])
 
   const overallCounts = useMemo(() => {
-    return cachedCollections.reduce(
+    return collections.reduce(
       (acc, collection) => {
         for (const video of collection.videos) {
           acc[getReportStatus(video)] += 1
@@ -1826,13 +1689,13 @@ export function CoverageReportClient({
       },
       { human: 0, ai: 0, none: 0 }
     )
-  }, [cachedCollections, getReportStatus])
+  }, [collections, getReportStatus])
 
   const effectiveFilter = interactionMode === 'explore' ? filter : 'all'
 
   const visibleCollections = useMemo(() => {
-    if (effectiveFilter === 'all') return cachedCollections
-    return cachedCollections
+    if (effectiveFilter === 'all') return collections
+    return collections
       .map((collection) => ({
         ...collection,
         videos: collection.videos.filter(
@@ -1840,7 +1703,7 @@ export function CoverageReportClient({
         )
       }))
       .filter((collection) => collection.videos.length > 0)
-  }, [cachedCollections, effectiveFilter, getReportStatus])
+  }, [collections, effectiveFilter, getReportStatus])
 
   useEffect(() => {
     setVisibleCount(
@@ -1854,7 +1717,7 @@ export function CoverageReportClient({
   )
 
   const statusIdMap = useMemo(() => {
-    return cachedCollections.reduce(
+    return collections.reduce(
       (acc, collection) => {
         for (const video of collection.videos) {
           if (!video.selectable) {
@@ -1866,7 +1729,7 @@ export function CoverageReportClient({
       },
       { human: [] as string[], ai: [] as string[], none: [] as string[] }
     )
-  }, [cachedCollections])
+  }, [collections])
 
   const handleToggleVideo = useCallback((
     video: ClientVideo,
@@ -1971,7 +1834,7 @@ export function CoverageReportClient({
     setSubmitState({ type: 'submitting' });
 
     const selectedVideos = getSelectedVideosInOrder(
-      cachedCollections,
+      collections,
       new Set(selectedIds)
     );
 
@@ -2018,7 +1881,7 @@ export function CoverageReportClient({
         .filter((item) => item.status !== 'created')
         .map((item) => item.mediaId)
     );
-  }, [cachedCollections, selectedIds, selectedLanguageIds, submitState.type])
+  }, [collections, selectedIds, selectedLanguageIds, submitState.type])
 
   useEffect(() => {
     const nextUrl = getCoverageJobsQueueRedirectUrl({
@@ -2074,11 +1937,15 @@ export function CoverageReportClient({
     }, 240)
   }, [isLoadingMore, visibleCollections.length])
 
-  const handleClearCache = useCallback(() => {
-    clearCachedCollections(languageKey)
-    setCacheMeta(null)
-    setCachedCollections(collections)
-  }, [collections, languageKey])
+  const handleRefreshNow = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const current = new URL(window.location.href)
+    current.searchParams.set('refresh', String(Date.now()))
+    window.location.assign(`${current.pathname}?${current.searchParams.toString()}`)
+  }, [])
 
   const totalCollections = visibleCollections.length
   const shownCollections = Math.min(visibleCount, totalCollections)
@@ -2087,12 +1954,6 @@ export function CoverageReportClient({
     totalCollections > 0
       ? Math.round((shownCollections / totalCollections) * 100)
       : 0
-  const nextRefreshIn = cacheMeta?.expiresAt
-    ? formatDuration(cacheMeta.expiresAt - now)
-    : 'unknown'
-  const lastUpdatedLabel = cacheMeta?.lastUpdated
-    ? formatTimeAgo(cacheMeta.lastUpdated, now)
-    : 'unknown'
   const submitFeedback = buildCoverageSubmitFeedback(submitState)
 
   return (
@@ -2117,7 +1978,7 @@ export function CoverageReportClient({
         </div>
         <div className="header-diagram">
           <div className="header-diagram-menu">
-            <Link href="/jobs" className="control-value header-menu-link">
+            <Link href="/dashboard/jobs" className="control-value header-menu-link">
               Queue
             </Link>
           </div>
@@ -2162,13 +2023,11 @@ export function CoverageReportClient({
             </div>
           </div>
           <div className="collection-cache-meta">
-            <span>Last updated: {lastUpdatedLabel}</span>
             <span className="collection-cache-refresh">
-              Next refresh in: {nextRefreshIn}
               <button
                 type="button"
                 className="collection-cache-clear"
-                onClick={handleClearCache}
+                onClick={handleRefreshNow}
                 aria-label="Refresh now"
                 title="Refresh now"
               >

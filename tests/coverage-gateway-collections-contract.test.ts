@@ -140,3 +140,144 @@ test('fetchCoverageCollections keeps deterministic failure when GraphQL fallback
     globalThis.fetch = originalFetch;
   }
 });
+
+test('fetchCoverageCollections reuses in-process cache for identical requests', async () => {
+  const originalFetch = globalThis.fetch;
+  let collectionsCalls = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/coverage/collections')) {
+      collectionsCalls += 1;
+      return jsonResponse({
+        collections: [
+          {
+            id: 'collection-1',
+            title: 'Collection',
+            label: 'collection',
+            publishedAt: null,
+            videos: []
+          }
+        ]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        CORE_API_ENDPOINT: 'https://gateway.test'
+      },
+      async () => {
+        const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
+          '../src/services/coverage-gateway'
+        );
+
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(collectionsCalls, 1);
+});
+
+test('fetchCoverageCollections forceRefresh bypasses in-process cache', async () => {
+  const originalFetch = globalThis.fetch;
+  let collectionsCalls = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/coverage/collections')) {
+      collectionsCalls += 1;
+      return jsonResponse({
+        collections: [
+          {
+            id: 'collection-1',
+            title: 'Collection',
+            label: 'collection',
+            publishedAt: null,
+            videos: []
+          }
+        ]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        CORE_API_ENDPOINT: 'https://gateway.test'
+      },
+      async () => {
+        const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
+          '../src/services/coverage-gateway'
+        );
+
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+        await module.fetchCoverageCollections('https://gateway.test', ['es'], { forceRefresh: true });
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(collectionsCalls, 2);
+});
+
+test('fetchCoverageCollections does not cache failures', async () => {
+  const originalFetch = globalThis.fetch;
+  let collectionsCalls = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/coverage/collections')) {
+      collectionsCalls += 1;
+      if (collectionsCalls === 1) {
+        return jsonResponse({ error: 'boom' }, 502);
+      }
+      return jsonResponse({
+        collections: [
+          {
+            id: 'collection-1',
+            title: 'Collection',
+            label: 'collection',
+            publishedAt: null,
+            videos: []
+          }
+        ]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        CORE_API_ENDPOINT: 'https://gateway.test'
+      },
+      async () => {
+        const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
+          '../src/services/coverage-gateway'
+        );
+
+        await assert.rejects(
+          async () => module.fetchCoverageCollections('https://gateway.test', ['es']),
+          /boom/i
+        );
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(collectionsCalls, 2);
+});

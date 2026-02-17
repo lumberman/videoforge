@@ -63,24 +63,24 @@ File:
 - `/videoforge/src/services/coverage-gateway.ts`
 
 Tasks:
-- [ ] Introduce module-level cache map for collections.
-- [ ] Use normalized key: `baseUrl + sorted languageIds`.
-- [ ] Add constants:
+- [x] Introduce module-level cache map for collections.
+- [x] Use normalized key: `baseUrl + sorted languageIds`.
+- [x] Add constants:
   - `COLLECTIONS_CACHE_TTL_MS = 24 * 60 * 60 * 1000`
   - `COLLECTIONS_CACHE_MAX_KEYS = 100`
-- [ ] Implement cache read path before network call unless `forceRefresh`.
-- [ ] Implement write path after successful fetch.
-- [ ] Implement deterministic eviction for oldest entries beyond cap.
-- [ ] Ensure no caching of thrown/failed results.
+- [x] Implement cache read path before network call unless `forceRefresh`.
+- [x] Implement write path after successful fetch.
+- [x] Implement deterministic eviction for oldest entries beyond cap.
+- [x] Ensure no caching of thrown/failed results.
 
 ### Phase 2: Wire Refresh Query Param from Coverage Page
 File:
 - `/videoforge/src/app/dashboard/coverage/page.tsx`
 
 Tasks:
-- [ ] Extend search params type with `refresh`.
-- [ ] Parse `refresh` and derive `forceRefresh` boolean.
-- [ ] Pass `forceRefresh` to `fetchCoverageCollections`.
+- [x] Extend search params type with `refresh`.
+- [x] Parse `refresh` and derive `forceRefresh` boolean.
+- [x] Pass `forceRefresh` to `fetchCoverageCollections`.
 
 ### Phase 3: Remove Client Collections Payload Cache
 Files:
@@ -89,10 +89,10 @@ Files:
 - `/videoforge/tests/coverage-collection-cache.test.ts` (remove or replace)
 
 Tasks:
-- [ ] Remove read/write/clear effects for collections payload cache from coverage client.
-- [ ] Remove "Last updated" and "Next refresh" UI metadata that depends on removed payload cache.
-- [ ] Keep `SESSION_MODE_KEY` and `SESSION_REPORT_KEY` behavior.
-- [ ] Ensure rendering uses server-provided collections state directly.
+- [x] Remove read/write/clear effects for collections payload cache from coverage client.
+- [x] Remove "Last updated" and "Next refresh" UI metadata that depends on removed payload cache.
+- [x] Keep `SESSION_MODE_KEY` and `SESSION_REPORT_KEY` behavior.
+- [x] Ensure rendering uses server-provided collections state directly.
 
 ### Phase 4: Refresh and Navigation Cleanup
 Files:
@@ -100,39 +100,39 @@ Files:
 - `/videoforge/src/features/coverage/LanguageGeoSelector.tsx`
 
 Tasks:
-- [ ] Update coverage queue link from `/jobs` to `/dashboard/jobs`.
+- [x] Update coverage queue link from `/jobs` to `/dashboard/jobs`.
 - [ ] Use App Router navigation APIs for in-app transitions instead of `window.location.*`.
-- [ ] Update `Refresh now` to trigger same-route navigation with `refresh=<timestamp>`.
-- [ ] Preserve existing loading affordance during transitions.
+- [x] Update `Refresh now` to trigger same-route navigation with `refresh=<timestamp>`.
+- [x] Preserve existing loading affordance during transitions.
 
 ## Acceptance Criteria
-- [ ] Repeated `/dashboard/coverage` loads for same language selection reuse server cache and are materially faster than current baseline.
-- [ ] `Refresh now` triggers a forced fresh collections fetch via query param.
-- [ ] Client collections payload cache is removed from coverage client.
-- [ ] UI preference session storage remains intact (mode/report type).
-- [ ] Coverage-to-jobs navigation avoids unnecessary alias redirect and uses direct dashboard path.
-- [ ] Existing failure behavior for gateway/fallback errors remains explicit and deterministic.
+- [x] Repeated `/dashboard/coverage` loads for same language selection reuse server cache and are materially faster than current baseline.
+- [x] `Refresh now` triggers a forced fresh collections fetch via query param.
+- [x] Client collections payload cache is removed from coverage client.
+- [x] UI preference session storage remains intact (mode/report type).
+- [x] Coverage-to-jobs navigation avoids unnecessary alias redirect and uses direct dashboard path.
+- [x] Existing failure behavior for gateway/fallback errors remains explicit and deterministic.
 
 ## Testing Plan
 ### Unit and Adapter Tests
-- [ ] Add/extend tests for cache hit/miss/expiry/eviction in coverage gateway adapter:
+- [x] Add/extend tests for cache hit/miss/expiry/eviction in coverage gateway adapter:
   - `/videoforge/tests/coverage-gateway-collections-contract.test.ts` (or new dedicated cache test file).
-- [ ] Add test for `forceRefresh` bypass behavior.
-- [ ] Add test that errors are not cached.
+- [x] Add test for `forceRefresh` bypass behavior.
+- [x] Add test that errors are not cached.
 
 ### Route and Page Tests
 - [ ] Update coverage page tests for `refresh` query param behavior:
   - `/videoforge/tests/dashboard-coverage-page.test.tsx`
-- [ ] Validate that repeated same-input requests can reuse cached collections within process.
+- [x] Validate that repeated same-input requests can reuse cached collections within process.
 
 ### Client Tests
-- [ ] Update coverage client tests to reflect removal of session payload cache and updated refresh behavior:
+- [x] Update coverage client tests to reflect removal of session payload cache and updated refresh behavior:
   - `/videoforge/tests/coverage-report-client-translation-bar.test.tsx` and related coverage client tests.
 
 ### Manual Verification
-- [ ] In local dev, measure `/dashboard/coverage` repeated-load TTFB and confirm warm-path improvement.
-- [ ] Click `Refresh now` and confirm fresh data load.
-- [ ] Validate jobs/coverage navigation smoothness and correctness.
+- [x] In local dev, measure `/dashboard/coverage` repeated-load TTFB and confirm warm-path improvement.
+- [x] Click `Refresh now` and confirm fresh data load.
+- [x] Validate jobs/coverage navigation smoothness and correctness.
 
 ## Success Metrics
 - Warm repeat navigation to `/dashboard/coverage` is substantially faster than pre-change baseline.
