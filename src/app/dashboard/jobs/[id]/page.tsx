@@ -44,8 +44,8 @@ export default async function JobDetailPage({
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Link href="/dashboard/jobs">Back to jobs</Link>
-            <Link href={`/dashboard/jobs/${job.id}`}>Refresh</Link>
+            <Link href="/jobs">Back to jobs</Link>
+            <Link href={`/jobs/${job.id}`}>Refresh</Link>
           </div>
         </div>
 

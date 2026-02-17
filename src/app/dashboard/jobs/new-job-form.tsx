@@ -142,7 +142,7 @@ export function NewJobForm() {
           style={{ marginTop: 10, color: status.type === 'error' ? 'var(--error)' : 'var(--ok)' }}
         >
           {status.message}{' '}
-          {status.type === 'success' ? <a href={`/dashboard/jobs/${status.jobId}`}>Open job</a> : null}
+          {status.type === 'success' ? <a href={`/jobs/${status.jobId}`}>Open job</a> : null}
         </p>
       )}
     </form>

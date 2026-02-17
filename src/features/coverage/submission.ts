@@ -52,7 +52,7 @@ export function buildCoverageJobsQueueUrl(
     skipped: String(summary.skipped)
   });
 
-  return `/dashboard/jobs?${params.toString()}`;
+  return `/jobs?${params.toString()}`;
 }
 
 export function getSelectedVideosInOrder(

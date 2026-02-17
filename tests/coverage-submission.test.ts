@@ -137,7 +137,7 @@ test('buildCoverageJobsQueueUrl includes deterministic coverage queue params', (
 
   assert.match(
     url,
-    /^\/dashboard\/jobs\?/
+    /^\/jobs\?/
   );
 
   const params = new URLSearchParams(url.split('?')[1] ?? '');

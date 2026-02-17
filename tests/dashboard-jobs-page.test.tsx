@@ -33,7 +33,7 @@ test('jobs page renders failed job status and details link', async () => {
     const html = renderToStaticMarkup(await pageModule.default({}));
     assert.match(html, new RegExp(job.id));
     assert.match(html, /failed/i);
-    assert.match(html, new RegExp(`/dashboard/jobs/${job.id}`));
+    assert.match(html, new RegExp(`/jobs/${job.id}`));
   });
 });
 

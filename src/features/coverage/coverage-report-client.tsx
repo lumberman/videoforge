@@ -2002,7 +2002,7 @@ export function CoverageReportClient({
         </div>
         <div className="header-diagram">
           <div className="header-diagram-menu">
-            <Link href="/dashboard/jobs" className="control-value header-menu-link">
+            <Link href="/jobs" className="control-value header-menu-link">
               Queue
             </Link>
           </div>

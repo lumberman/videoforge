@@ -26,7 +26,7 @@ export function GlobalShell({ children }: { children: React.ReactNode }) {
           >
             <strong>AI Video Enrichment Platform</strong>
             <nav style={{ display: 'flex', gap: 12 }}>
-              <Link href="/dashboard/jobs">Jobs</Link>
+              <Link href="/jobs">Jobs</Link>
               <Link href={'/dashboard/coverage' as Route}>Coverage</Link>
             </nav>
           </div>

@@ -128,7 +128,7 @@ test('getCoverageJobsQueueRedirectUrl returns queue URL for successful done stat
     hasRedirected: false
   });
 
-  assert.match(nextUrl ?? '', /^\/dashboard\/jobs\?/);
+  assert.match(nextUrl ?? '', /^\/jobs\?/);
   const params = new URLSearchParams((nextUrl ?? '').split('?')[1] ?? '');
   assert.equal(params.get('from'), 'coverage');
   assert.equal(params.get('created'), '2');

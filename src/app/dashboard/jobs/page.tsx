@@ -116,7 +116,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           }}
         >
           <h2 style={{ margin: 0 }}>Jobs</h2>
-          <Link href="/dashboard/jobs">Refresh</Link>
+          <Link href="/jobs">Refresh</Link>
         </div>
 
         {jobs.length === 0 ? (
@@ -149,7 +149,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
                   <td>{job.errors.at(-1)?.message ?? 'n/a'}</td>
                   <td>{formatDate(job.createdAt)}</td>
                   <td>
-                    <Link href={`/dashboard/jobs/${job.id}`}>Open</Link>
+                    <Link href={`/jobs/${job.id}`}>Open</Link>
                   </td>
                 </tr>
               ))}
