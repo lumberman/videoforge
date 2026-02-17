@@ -171,6 +171,17 @@ const SESSION_MODE_KEY = 'ai-media-coverage-mode'
 const SESSION_REPORT_KEY = 'ai-media-coverage-report'
 const COLLECTIONS_PER_BATCH = 200
 
+export function buildCoverageUrlWithoutRefresh(currentHref: string): string | null {
+  const currentUrl = new URL(currentHref)
+  if (!currentUrl.searchParams.has('refresh')) {
+    return null
+  }
+
+  currentUrl.searchParams.delete('refresh')
+  const query = currentUrl.searchParams.toString()
+  return `${currentUrl.pathname}${query ? `?${query}` : ''}${currentUrl.hash}`
+}
+
 export function getCoverageJobsQueueRedirectUrl({
   submitState,
   hasRedirected
@@ -1884,6 +1895,19 @@ export function CoverageReportClient({
   }, [collections, selectedIds, selectedLanguageIds, submitState.type])
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const nextUrl = buildCoverageUrlWithoutRefresh(window.location.href)
+    if (!nextUrl) {
+      return
+    }
+
+    window.history.replaceState(window.history.state, '', nextUrl)
+  }, [])
+
+  useEffect(() => {
     const nextUrl = getCoverageJobsQueueRedirectUrl({
       submitState,
       hasRedirected: hasQueuedJobsRedirectRef.current
@@ -1943,7 +1967,7 @@ export function CoverageReportClient({
     }
 
     const current = new URL(window.location.href)
-    current.searchParams.set('refresh', String(Date.now()))
+    current.searchParams.set('refresh', '1')
     window.location.assign(`${current.pathname}?${current.searchParams.toString()}`)
   }, [])
 

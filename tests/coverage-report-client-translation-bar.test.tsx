@@ -4,6 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   buildUnselectableVideoSubmitError,
+  buildCoverageUrlWithoutRefresh,
   buildCoverageSubmitFeedback,
   buildVideoJobDebugPayload,
   CoverageReportClient,
@@ -147,6 +148,21 @@ test('getCoverageJobsQueueRedirectUrl returns queue URL for successful done stat
     hasRedirected: true
   });
   assert.equal(blockedRepeat, null);
+});
+
+test('buildCoverageUrlWithoutRefresh strips one-shot refresh query param', () => {
+  assert.equal(
+    buildCoverageUrlWithoutRefresh('https://app.test/dashboard/coverage?languageId=529&refresh=1'),
+    '/dashboard/coverage?languageId=529'
+  );
+  assert.equal(
+    buildCoverageUrlWithoutRefresh('https://app.test/dashboard/coverage?refresh=1#table'),
+    '/dashboard/coverage#table'
+  );
+  assert.equal(
+    buildCoverageUrlWithoutRefresh('https://app.test/dashboard/coverage?languageId=529'),
+    null
+  );
 });
 
 test('getCoverageJobsQueueRedirectUrl does not redirect for non-successful outcomes', () => {

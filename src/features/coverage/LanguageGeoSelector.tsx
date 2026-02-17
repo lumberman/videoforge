@@ -425,6 +425,7 @@ export function LanguageGeoSelector({
   const applyUrlParams = (nextLanguageIds: string[]) => {
     const currentQuery = searchParams?.toString() ?? ''
     const nextParams = new URLSearchParams(currentQuery)
+    nextParams.delete('refresh')
 
     if (nextLanguageIds.length > 0) {
       nextParams.set('languageId', nextLanguageIds.join(','))

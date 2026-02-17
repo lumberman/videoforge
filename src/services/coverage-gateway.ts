@@ -21,13 +21,23 @@ const COVERAGE_GRAPHQL_HEADERS = {
 
 const COLLECTIONS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const COLLECTIONS_CACHE_MAX_KEYS = 100;
+const COLLECTIONS_CACHE_MAX_TOTAL_BYTES = parsePositiveInt(
+  process.env.COVERAGE_COLLECTIONS_CACHE_MAX_TOTAL_BYTES,
+  30 * 1024 * 1024
+);
+const COLLECTIONS_CACHE_MAX_ENTRY_BYTES = Math.min(
+  COLLECTIONS_CACHE_MAX_TOTAL_BYTES,
+  parsePositiveInt(process.env.COVERAGE_COLLECTIONS_CACHE_MAX_ENTRY_BYTES, 3 * 1024 * 1024)
+);
 
 type CollectionsCacheEntry = {
   collections: CoverageCollection[];
   expiresAt: number;
+  bytes: number;
 };
 
 const collectionsCache = new Map<string, CollectionsCacheEntry>();
+let collectionsCacheTotalBytes = 0;
 
 class CoverageGatewayError extends Error {
   status: number;
@@ -42,8 +52,35 @@ function normalizeBaseUrl(value: string): string {
   return value.replace(/\/$/, '');
 }
 
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(raw.trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
 function buildCollectionsCacheKey(baseUrl: string, languageIds: string[]): string {
   return `${normalizeBaseUrl(baseUrl)}|${[...languageIds].sort().join(',')}`;
+}
+
+function estimateCollectionsCacheBytes(collections: CoverageCollection[]): number {
+  return Buffer.byteLength(JSON.stringify(collections), 'utf8');
+}
+
+function evictCollectionsCacheKey(key: string): void {
+  const entry = collectionsCache.get(key);
+  if (!entry) {
+    return;
+  }
+
+  collectionsCache.delete(key);
+  collectionsCacheTotalBytes = Math.max(0, collectionsCacheTotalBytes - entry.bytes);
 }
 
 function readCollectionsCache(
@@ -56,7 +93,7 @@ function readCollectionsCache(
   }
 
   if (entry.expiresAt <= now) {
-    collectionsCache.delete(key);
+    evictCollectionsCacheKey(key);
     return null;
   }
 
@@ -71,18 +108,28 @@ function writeCollectionsCache(
   collections: CoverageCollection[],
   now: number = Date.now()
 ): void {
-  collectionsCache.delete(key);
+  const bytes = estimateCollectionsCacheBytes(collections);
+  if (bytes > COLLECTIONS_CACHE_MAX_ENTRY_BYTES) {
+    return;
+  }
+
+  evictCollectionsCacheKey(key);
   collectionsCache.set(key, {
     collections,
-    expiresAt: now + COLLECTIONS_CACHE_TTL_MS
+    expiresAt: now + COLLECTIONS_CACHE_TTL_MS,
+    bytes
   });
+  collectionsCacheTotalBytes += bytes;
 
-  while (collectionsCache.size > COLLECTIONS_CACHE_MAX_KEYS) {
+  while (
+    collectionsCache.size > COLLECTIONS_CACHE_MAX_KEYS ||
+    collectionsCacheTotalBytes > COLLECTIONS_CACHE_MAX_TOTAL_BYTES
+  ) {
     const oldestKey = collectionsCache.keys().next().value as string | undefined;
     if (!oldestKey) {
       break;
     }
-    collectionsCache.delete(oldestKey);
+    evictCollectionsCacheKey(oldestKey);
   }
 }
 

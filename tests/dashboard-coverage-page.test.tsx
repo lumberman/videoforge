@@ -119,3 +119,15 @@ test('coverage page renders explicit schema error when language fallback query f
     globalThis.fetch = originalFetch;
   }
 });
+
+test('coverage page force-refresh token only accepts one-shot marker', async () => {
+  const refreshTokenModule = await importFresh<typeof import('../src/features/coverage/refresh-token')>(
+    '../src/features/coverage/refresh-token'
+  );
+
+  assert.equal(refreshTokenModule.isCoverageForceRefreshToken('1'), true);
+  assert.equal(refreshTokenModule.isCoverageForceRefreshToken(' 1 '), true);
+  assert.equal(refreshTokenModule.isCoverageForceRefreshToken('1700000000000'), false);
+  assert.equal(refreshTokenModule.isCoverageForceRefreshToken(''), false);
+  assert.equal(refreshTokenModule.isCoverageForceRefreshToken(undefined), false);
+});

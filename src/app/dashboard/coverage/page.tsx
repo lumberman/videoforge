@@ -1,5 +1,6 @@
 import React from 'react';
 import { CoverageReportClient } from '@/features/coverage/coverage-report-client';
+import { isCoverageForceRefreshToken } from '@/features/coverage/refresh-token';
 import type { CoverageCollection, CoverageLanguageOption } from '@/features/coverage/types';
 import {
   fetchCoverageCollections,
@@ -58,7 +59,7 @@ export default async function CoveragePage({
       }
 
       if (initialSelectedLanguageIds.length > 0) {
-        const forceRefresh = Boolean(resolvedSearchParams?.refresh?.trim());
+        const forceRefresh = isCoverageForceRefreshToken(resolvedSearchParams?.refresh);
         initialCollections = await fetchCoverageCollections(baseUrl, initialSelectedLanguageIds, {
           forceRefresh
         });

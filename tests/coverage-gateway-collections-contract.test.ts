@@ -281,3 +281,100 @@ test('fetchCoverageCollections does not cache failures', async () => {
 
   assert.equal(collectionsCalls, 2);
 });
+
+test('fetchCoverageCollections skips caching entries larger than max entry bytes', async () => {
+  const originalFetch = globalThis.fetch;
+  let collectionsCalls = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/coverage/collections')) {
+      collectionsCalls += 1;
+      return jsonResponse({
+        collections: [
+          {
+            id: 'collection-1',
+            title: 'x'.repeat(700),
+            label: 'collection',
+            publishedAt: null,
+            videos: []
+          }
+        ]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        CORE_API_ENDPOINT: 'https://gateway.test',
+        COVERAGE_COLLECTIONS_CACHE_MAX_TOTAL_BYTES: '4096',
+        COVERAGE_COLLECTIONS_CACHE_MAX_ENTRY_BYTES: '128'
+      },
+      async () => {
+        const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
+          '../src/services/coverage-gateway'
+        );
+
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(collectionsCalls, 2);
+});
+
+test('fetchCoverageCollections evicts old entries when total bytes budget is exceeded', async () => {
+  const originalFetch = globalThis.fetch;
+  let collectionsCalls = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/coverage/collections')) {
+      collectionsCalls += 1;
+      const parsedUrl = new URL(url);
+      const languageIds = parsedUrl.searchParams.get('languageIds') ?? '';
+      return jsonResponse({
+        collections: [
+          {
+            id: `collection-${languageIds}`,
+            title: `${languageIds}-${'x'.repeat(260)}`,
+            label: 'collection',
+            publishedAt: null,
+            videos: []
+          }
+        ]
+      });
+    }
+
+    return jsonResponse({ error: 'unexpected request' }, 500);
+  }) as typeof globalThis.fetch;
+
+  try {
+    await withEnv(
+      {
+        CORE_API_ENDPOINT: 'https://gateway.test',
+        COVERAGE_COLLECTIONS_CACHE_MAX_TOTAL_BYTES: '450',
+        COVERAGE_COLLECTIONS_CACHE_MAX_ENTRY_BYTES: '400'
+      },
+      async () => {
+        const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
+          '../src/services/coverage-gateway'
+        );
+
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+        await module.fetchCoverageCollections('https://gateway.test', ['fr']);
+        await module.fetchCoverageCollections('https://gateway.test', ['es']);
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(collectionsCalls, 3);
+});
