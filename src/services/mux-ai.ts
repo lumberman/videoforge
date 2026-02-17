@@ -867,9 +867,12 @@ async function transcribeWithPrimitiveFetch(
   try {
     transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, { required: true });
   } catch (error) {
+    const causeMessage = getImportFailureMessage(error);
     throw toOperationFailed(
       'primitives transcription',
-      'fetchTranscriptForAsset threw an exception',
+      causeMessage
+        ? `fetchTranscriptForAsset threw an exception: ${causeMessage}`
+        : 'fetchTranscriptForAsset threw an exception',
       error
     );
   }
@@ -918,7 +921,18 @@ export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcrip
     return primitiveTranscript;
   }
 
-  const primitiveFetchTranscript = await transcribeWithPrimitiveFetch(primitives, muxAssetId);
+  let primitiveFetchTranscript: Transcript | undefined;
+  try {
+    primitiveFetchTranscript = await transcribeWithPrimitiveFetch(primitives, muxAssetId);
+  } catch (error) {
+    if (isMuxAiError(error)) {
+      console.warn(
+        `[mux-ai][optional-fallback] operation="primitives transcription fetch" code="${error.code}" message="${error.message}"`
+      );
+    } else {
+      throw error;
+    }
+  }
   if (primitiveFetchTranscript) {
     return primitiveFetchTranscript;
   }

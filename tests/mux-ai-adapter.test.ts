@@ -415,3 +415,87 @@ test('mux adapter silently falls back to workflow when legacy primitives transcr
     }
   );
 });
+
+test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+      const warnings: string[] = [];
+      const originalWarn = console.warn;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      console.warn = (...args: unknown[]) => {
+        warnings.push(args.map((value) => String(value)).join(' '));
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              throw new Error('No transcript track found for playback id');
+            }
+          };
+        }
+
+        return {
+          async transcribe() {
+            return {
+              language: 'en',
+              text: 'workflow fallback transcript',
+              segments: [{ startSec: 0, endSec: 1, text: 'workflow fallback transcript' }]
+            };
+          }
+        };
+      });
+
+      try {
+        const transcript = await muxAiModule.transcribeWithMuxAi(
+          'mux-asset-fetch-fallback'
+        );
+        assert.equal(transcript.text, 'workflow fallback transcript');
+        assert.equal(
+          warnings.some(
+            (line) =>
+              line.includes('operation="primitives transcription fetch"') &&
+              line.includes('No transcript track found for playback id')
+          ),
+          true
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+        console.warn = originalWarn;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
