@@ -1,6 +1,6 @@
 import { chaptersWithMuxAi } from '@/services/mux-ai';
 import type { Transcript } from '@/types/enrichment';
 
-export async function generateChapters(transcript: Transcript) {
-  return chaptersWithMuxAi(transcript);
+export async function generateChapters(muxAssetId: string, transcript: Transcript) {
+  return chaptersWithMuxAi(muxAssetId, transcript);
 }

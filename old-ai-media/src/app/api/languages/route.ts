@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
+const GATEWAY_URL = process.env.CORE_API_ENDPOINT
 const ENGLISH_LANGUAGE_ID = '529'
 const COUNTRY_LANGUAGE_POPULATIONS_FILE = 'country-language-populations.json'
 const COUNTRY_LANGUAGE_POPULATIONS_PATHS = [

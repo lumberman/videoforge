@@ -39,7 +39,7 @@ export default async function CoveragePage({
 
   if (!baseUrl) {
     initialErrorMessage =
-      'Coverage gateway is not configured. Set NEXT_PUBLIC_GATEWAY_URL or NEXT_STAGE_GATEWAY_URL.';
+      'Coverage gateway is not configured. Set CORE_API_ENDPOINT or NEXT_STAGE_GATEWAY_URL.';
   } else {
     try {
       initialLanguages = await fetchCoverageLanguages(baseUrl);

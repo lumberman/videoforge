@@ -38,8 +38,8 @@ export const env = {
   get artifactRootPath() {
     return process.env.ARTIFACT_ROOT_PATH ?? '.data/artifacts';
   },
-  get nextPublicGatewayUrl() {
-    return process.env.NEXT_PUBLIC_GATEWAY_URL?.trim() ?? '';
+  get coreApiEndpoint() {
+    return process.env.CORE_API_ENDPOINT?.trim() ?? '';
   },
   get nextStageGatewayUrl() {
     return process.env.NEXT_STAGE_GATEWAY_URL?.trim() ?? '';

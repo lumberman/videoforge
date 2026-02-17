@@ -116,7 +116,7 @@ Completed with strict local-first behavior:
 
 **Actions:**
 - Updated `/videoforge/src/features/coverage/LanguageGeoSelector.tsx` to keep local data authoritative and stop broad remote merge behavior.
-- Updated `/videoforge/src/app/api/languages/route.ts` to resolve gateway URL from `NEXT_PUBLIC_GATEWAY_URL` or `NEXT_STAGE_GATEWAY_URL`.
+- Updated `/videoforge/src/app/api/languages/route.ts` to resolve gateway URL from `CORE_API_ENDPOINT` or `NEXT_STAGE_GATEWAY_URL`.
 - Added regression tests in `/videoforge/tests/api-languages-route.test.ts` for local-hit/no-remote-call and local-miss/remote-fallback behavior.
 
 **Learnings:**

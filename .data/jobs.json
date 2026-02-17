@@ -1,326 +1,10 @@
 {
   "jobs": [
     {
-      "id": "job_1719237454084afc9978",
-      "muxAssetId": "test-mux-001",
+      "id": "job_5ae0570bfd3548c29a0d",
+      "muxAssetId": "t2ciyLdbKA3w02lsN0200swXJd00P9dDE3n1SwP00t0201BKxY",
       "languages": [
-        "es",
-        "fr"
-      ],
-      "options": {
-        "generateVoiceover": false,
-        "uploadMux": false,
-        "notifyCms": false
-      },
-      "status": "completed",
-      "retries": 0,
-      "createdAt": "2026-02-14T11:48:51.378Z",
-      "updatedAt": "2026-02-14T11:48:51.392Z",
-      "artifacts": {
-        "transcript": "/api/artifacts/job_1719237454084afc9978/transcript.json",
-        "subtitlesVtt": "/api/artifacts/job_1719237454084afc9978/subtitles.vtt",
-        "chapters": "/api/artifacts/job_1719237454084afc9978/chapters.json",
-        "metadata": "/api/artifacts/job_1719237454084afc9978/metadata.json",
-        "embeddings": "/api/artifacts/job_1719237454084afc9978/embeddings.json",
-        "translations": "/api/artifacts/job_1719237454084afc9978/translations.json",
-        "artifactManifest": "/api/artifacts/job_1719237454084afc9978/artifacts.json"
-      },
-      "steps": [
-        {
-          "name": "download_video",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.385Z",
-          "finishedAt": "2026-02-14T11:48:51.386Z"
-        },
-        {
-          "name": "transcription",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.386Z",
-          "finishedAt": "2026-02-14T11:48:51.386Z"
-        },
-        {
-          "name": "structured_transcript",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.387Z",
-          "finishedAt": "2026-02-14T11:48:51.388Z"
-        },
-        {
-          "name": "chapters",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.388Z",
-          "finishedAt": "2026-02-14T11:48:51.388Z"
-        },
-        {
-          "name": "metadata",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.388Z",
-          "finishedAt": "2026-02-14T11:48:51.389Z"
-        },
-        {
-          "name": "embeddings",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.389Z",
-          "finishedAt": "2026-02-14T11:48:51.389Z"
-        },
-        {
-          "name": "translation",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.390Z",
-          "finishedAt": "2026-02-14T11:48:51.390Z"
-        },
-        {
-          "name": "voiceover",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T11:48:51.390Z"
-        },
-        {
-          "name": "artifact_upload",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T11:48:51.390Z",
-          "finishedAt": "2026-02-14T11:48:51.392Z"
-        },
-        {
-          "name": "mux_upload",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T11:48:51.392Z"
-        },
-        {
-          "name": "cms_notify",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T11:48:51.392Z"
-        }
-      ],
-      "errors": [],
-      "startedAt": "2026-02-14T11:48:51.385Z",
-      "completedAt": "2026-02-14T11:48:51.392Z"
-    },
-    {
-      "id": "job_ec24ab277d5946aeb712",
-      "muxAssetId": "smoke-asset-001",
-      "languages": [
-        "es"
-      ],
-      "options": {
-        "generateVoiceover": false,
-        "uploadMux": false,
-        "notifyCms": false
-      },
-      "status": "completed",
-      "retries": 0,
-      "createdAt": "2026-02-14T19:14:51.498Z",
-      "updatedAt": "2026-02-14T19:14:51.511Z",
-      "artifacts": {
-        "transcript": "/api/artifacts/job_ec24ab277d5946aeb712/transcript.json",
-        "subtitlesVtt": "/api/artifacts/job_ec24ab277d5946aeb712/subtitles.vtt",
-        "chapters": "/api/artifacts/job_ec24ab277d5946aeb712/chapters.json",
-        "metadata": "/api/artifacts/job_ec24ab277d5946aeb712/metadata.json",
-        "embeddings": "/api/artifacts/job_ec24ab277d5946aeb712/embeddings.json",
-        "translations": "/api/artifacts/job_ec24ab277d5946aeb712/translations.json",
-        "artifactManifest": "/api/artifacts/job_ec24ab277d5946aeb712/artifacts.json"
-      },
-      "steps": [
-        {
-          "name": "download_video",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.501Z",
-          "finishedAt": "2026-02-14T19:14:51.502Z"
-        },
-        {
-          "name": "transcription",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.502Z",
-          "finishedAt": "2026-02-14T19:14:51.503Z"
-        },
-        {
-          "name": "structured_transcript",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.504Z",
-          "finishedAt": "2026-02-14T19:14:51.504Z"
-        },
-        {
-          "name": "chapters",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.505Z",
-          "finishedAt": "2026-02-14T19:14:51.505Z"
-        },
-        {
-          "name": "metadata",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.506Z",
-          "finishedAt": "2026-02-14T19:14:51.506Z"
-        },
-        {
-          "name": "embeddings",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.507Z",
-          "finishedAt": "2026-02-14T19:14:51.507Z"
-        },
-        {
-          "name": "translation",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.508Z",
-          "finishedAt": "2026-02-14T19:14:51.508Z"
-        },
-        {
-          "name": "voiceover",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:14:51.509Z"
-        },
-        {
-          "name": "artifact_upload",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:14:51.509Z",
-          "finishedAt": "2026-02-14T19:14:51.510Z"
-        },
-        {
-          "name": "mux_upload",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:14:51.511Z"
-        },
-        {
-          "name": "cms_notify",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:14:51.511Z"
-        }
-      ],
-      "errors": [],
-      "currentStep": "artifact_upload",
-      "startedAt": "2026-02-14T19:14:51.501Z",
-      "completedAt": "2026-02-14T19:14:51.511Z"
-    },
-    {
-      "id": "job_079314589359471c9052",
-      "muxAssetId": "smoke-asset-001",
-      "languages": [
-        "es"
-      ],
-      "options": {
-        "generateVoiceover": false,
-        "uploadMux": false,
-        "notifyCms": false
-      },
-      "status": "completed",
-      "retries": 0,
-      "createdAt": "2026-02-14T19:15:13.369Z",
-      "updatedAt": "2026-02-14T19:15:13.384Z",
-      "artifacts": {
-        "transcript": "/api/artifacts/job_079314589359471c9052/transcript.json",
-        "subtitlesVtt": "/api/artifacts/job_079314589359471c9052/subtitles.vtt",
-        "chapters": "/api/artifacts/job_079314589359471c9052/chapters.json",
-        "metadata": "/api/artifacts/job_079314589359471c9052/metadata.json",
-        "embeddings": "/api/artifacts/job_079314589359471c9052/embeddings.json",
-        "translations": "/api/artifacts/job_079314589359471c9052/translations.json",
-        "artifactManifest": "/api/artifacts/job_079314589359471c9052/artifacts.json"
-      },
-      "steps": [
-        {
-          "name": "download_video",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.372Z",
-          "finishedAt": "2026-02-14T19:15:13.373Z"
-        },
-        {
-          "name": "transcription",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.373Z",
-          "finishedAt": "2026-02-14T19:15:13.374Z"
-        },
-        {
-          "name": "structured_transcript",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.375Z",
-          "finishedAt": "2026-02-14T19:15:13.376Z"
-        },
-        {
-          "name": "chapters",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.376Z",
-          "finishedAt": "2026-02-14T19:15:13.376Z"
-        },
-        {
-          "name": "metadata",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.377Z",
-          "finishedAt": "2026-02-14T19:15:13.377Z"
-        },
-        {
-          "name": "embeddings",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.378Z",
-          "finishedAt": "2026-02-14T19:15:13.378Z"
-        },
-        {
-          "name": "translation",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.379Z",
-          "finishedAt": "2026-02-14T19:15:13.379Z"
-        },
-        {
-          "name": "voiceover",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:15:13.380Z"
-        },
-        {
-          "name": "artifact_upload",
-          "status": "completed",
-          "retries": 0,
-          "startedAt": "2026-02-14T19:15:13.380Z",
-          "finishedAt": "2026-02-14T19:15:13.382Z"
-        },
-        {
-          "name": "mux_upload",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:15:13.383Z"
-        },
-        {
-          "name": "cms_notify",
-          "status": "skipped",
-          "retries": 0,
-          "finishedAt": "2026-02-14T19:15:13.383Z"
-        }
-      ],
-      "errors": [],
-      "currentStep": "artifact_upload",
-      "startedAt": "2026-02-14T19:15:13.371Z",
-      "completedAt": "2026-02-14T19:15:13.384Z"
-    },
-    {
-      "id": "job_3346e68dcd4d42bf99fd",
-      "muxAssetId": "sample-mux-asset",
-      "languages": [
-        "es",
-        "fr"
+        "3934"
       ],
       "options": {
         "generateVoiceover": false,
@@ -329,23 +13,23 @@
       },
       "status": "failed",
       "retries": 0,
-      "createdAt": "2026-02-16T17:42:23.551Z",
-      "updatedAt": "2026-02-16T17:42:23.559Z",
+      "createdAt": "2026-02-17T02:20:14.696Z",
+      "updatedAt": "2026-02-17T02:20:14.722Z",
       "artifacts": {},
       "steps": [
         {
           "name": "download_video",
           "status": "completed",
           "retries": 0,
-          "startedAt": "2026-02-16T17:42:23.556Z",
-          "finishedAt": "2026-02-16T17:42:23.557Z"
+          "startedAt": "2026-02-17T02:20:14.712Z",
+          "finishedAt": "2026-02-17T02:20:14.716Z"
         },
         {
           "name": "transcription",
           "status": "failed",
           "retries": 0,
-          "startedAt": "2026-02-16T17:42:23.557Z",
-          "finishedAt": "2026-02-16T17:42:23.558Z",
+          "startedAt": "2026-02-17T02:20:14.717Z",
+          "finishedAt": "2026-02-17T02:20:14.719Z",
           "error": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET."
         },
         {
@@ -398,15 +82,815 @@
         {
           "step": "transcription",
           "message": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET.",
-          "at": "2026-02-16T17:42:23.558Z",
+          "at": "2026-02-17T02:20:14.719Z",
           "code": "MUX_AI_CONFIG_MISSING",
           "operatorHint": "Configure MUX_AI_WORKFLOW_SECRET_KEY (preferred) or MUX_TOKEN_ID and MUX_TOKEN_SECRET, then retry the job.",
           "isDependencyError": true
         }
       ],
       "currentStep": "transcription",
-      "startedAt": "2026-02-16T17:42:23.555Z",
-      "completedAt": "2026-02-16T17:42:23.559Z"
+      "startedAt": "2026-02-17T02:20:14.710Z",
+      "completedAt": "2026-02-17T02:20:14.722Z"
+    },
+    {
+      "id": "job_ef70990424204280bb27",
+      "muxAssetId": "cwcItmusZs6xzPYbphS7okUEBza5fj00emTI02CPYeg01E",
+      "languages": [
+        "3934"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T02:20:14.714Z",
+      "updatedAt": "2026-02-17T02:20:14.724Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:20:14.718Z",
+          "finishedAt": "2026-02-17T02:20:14.720Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:20:14.722Z",
+          "finishedAt": "2026-02-17T02:20:14.723Z",
+          "error": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET."
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI runtime credentials are missing. Set MUX_AI_WORKFLOW_SECRET_KEY or MUX_TOKEN_ID/MUX_TOKEN_SECRET.",
+          "at": "2026-02-17T02:20:14.723Z",
+          "code": "MUX_AI_CONFIG_MISSING",
+          "operatorHint": "Configure MUX_AI_WORKFLOW_SECRET_KEY (preferred) or MUX_TOKEN_ID and MUX_TOKEN_SECRET, then retry the job.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:20:14.717Z",
+      "completedAt": "2026-02-17T02:20:14.724Z"
+    },
+    {
+      "id": "job_2373333b3bdd490dbb0a",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T02:37:59.745Z",
+      "updatedAt": "2026-02-17T02:37:59.755Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:37:59.750Z",
+          "finishedAt": "2026-02-17T02:37:59.751Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:37:59.751Z",
+          "finishedAt": "2026-02-17T02:37:59.753Z",
+          "error": "Failed to import @mux/ai/primitives."
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Failed to import @mux/ai/primitives.",
+          "at": "2026-02-17T02:37:59.753Z",
+          "code": "MUX_AI_IMPORT_FAILED",
+          "operatorHint": "Verify @mux/ai installation, Node 21+ runtime, and Mux environment configuration.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:37:59.748Z",
+      "completedAt": "2026-02-17T02:37:59.755Z"
+    },
+    {
+      "id": "job_fc885a4a6b5448edaf2b",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T02:40:24.542Z",
+      "updatedAt": "2026-02-17T02:40:24.590Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:40:24.583Z",
+          "finishedAt": "2026-02-17T02:40:24.584Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:40:24.585Z",
+          "finishedAt": "2026-02-17T02:40:24.586Z",
+          "error": "Failed to import @mux/ai/primitives. Cannot find module '@mux/ai/primitives'"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Failed to import @mux/ai/primitives. Cannot find module '@mux/ai/primitives'",
+          "at": "2026-02-17T02:40:24.586Z",
+          "code": "MUX_AI_IMPORT_FAILED",
+          "operatorHint": "Verify @mux/ai installation, Node 21+ runtime, and Mux environment configuration.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:40:24.581Z",
+      "completedAt": "2026-02-17T02:40:24.590Z"
+    },
+    {
+      "id": "job_4d28c105fff54fcfb52a",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T02:46:30.367Z",
+      "updatedAt": "2026-02-17T02:46:30.387Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:46:30.383Z",
+          "finishedAt": "2026-02-17T02:46:30.384Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:46:30.384Z",
+          "finishedAt": "2026-02-17T02:46:30.386Z",
+          "error": "Failed to import @mux/ai/primitives and @mux/ai fallback. Cannot find module '@mux/ai'"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Failed to import @mux/ai/primitives and @mux/ai fallback. Cannot find module '@mux/ai'",
+          "at": "2026-02-17T02:46:30.386Z",
+          "code": "MUX_AI_IMPORT_FAILED",
+          "operatorHint": "Verify @mux/ai installation, Node 21+ runtime, and Mux environment configuration.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:46:30.382Z",
+      "completedAt": "2026-02-17T02:46:30.387Z"
+    },
+    {
+      "id": "job_61778ca7fc254dcaa39c",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T02:47:49.325Z",
+      "updatedAt": "2026-02-17T02:47:49.470Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:47:49.329Z",
+          "finishedAt": "2026-02-17T02:47:49.329Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T02:47:49.330Z",
+          "finishedAt": "2026-02-17T02:47:49.465Z",
+          "error": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module",
+          "at": "2026-02-17T02:47:49.460Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module",
+          "at": "2026-02-17T02:47:49.463Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module",
+          "at": "2026-02-17T02:47:49.465Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:47:49.328Z",
+      "completedAt": "2026-02-17T02:47:49.470Z"
+    },
+    {
+      "id": "job_54efd1ee604c4218a0b7",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T02:56:07.824Z",
+      "updatedAt": "2026-02-17T02:56:08.372Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T02:56:07.873Z",
+          "finishedAt": "2026-02-17T02:56:07.875Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T02:56:07.876Z",
+          "finishedAt": "2026-02-17T02:56:08.370Z",
+          "error": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+          "at": "2026-02-17T02:56:08.230Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+          "at": "2026-02-17T02:56:08.300Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+          "at": "2026-02-17T02:56:08.370Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T02:56:07.871Z",
+      "completedAt": "2026-02-17T02:56:08.372Z"
+    },
+    {
+      "id": "job_033dfb64384c40e1afb6",
+      "muxAssetId": "YDITMn00JMpm3wWf1HPzEmPTryUX83y2ZNlhzxIJUyU00",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T15:12:31.270Z",
+      "updatedAt": "2026-02-17T15:12:31.937Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T15:12:31.276Z",
+          "finishedAt": "2026-02-17T15:12:31.277Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T15:12:31.278Z",
+          "finishedAt": "2026-02-17T15:12:31.935Z",
+          "error": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset YDITMn00JMpm3wWf1HPzEmPTryUX83y2ZNlhzxIJUyU00"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset YDITMn00JMpm3wWf1HPzEmPTryUX83y2ZNlhzxIJUyU00",
+          "at": "2026-02-17T15:12:31.697Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset YDITMn00JMpm3wWf1HPzEmPTryUX83y2ZNlhzxIJUyU00",
+          "at": "2026-02-17T15:12:31.868Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI asset lookup failed: Mux API returned HTTP 400 while fetching asset YDITMn00JMpm3wWf1HPzEmPTryUX83y2ZNlhzxIJUyU00",
+          "at": "2026-02-17T15:12:31.935Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T15:12:31.275Z",
+      "completedAt": "2026-02-17T15:12:31.937Z"
+    },
+    {
+      "id": "job_ffb56704cf9946eabe96",
+      "muxAssetId": "02Z02ANH23SOY2rzNXP009XBvBeGoM00sq68e7we6mQaB004",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T15:19:26.708Z",
+      "updatedAt": "2026-02-17T15:19:27.551Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T15:19:26.714Z",
+          "finishedAt": "2026-02-17T15:19:26.715Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T15:19:26.716Z",
+          "finishedAt": "2026-02-17T15:19:27.549Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T15:19:27.180Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T15:19:27.344Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T15:19:27.549Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T15:19:26.713Z",
+      "completedAt": "2026-02-17T15:19:27.551Z"
     }
   ]
 }

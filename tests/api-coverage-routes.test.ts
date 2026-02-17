@@ -14,7 +14,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 test('coverage API routes return 503 when gateway env is missing', async () => {
   await withEnv(
     {
-      NEXT_PUBLIC_GATEWAY_URL: undefined,
+      CORE_API_ENDPOINT: undefined,
       NEXT_STAGE_GATEWAY_URL: undefined
     },
     async () => {
@@ -40,7 +40,7 @@ test('coverage API routes return 503 when gateway env is missing', async () => {
   );
 });
 
-test('coverage languages route prefers NEXT_PUBLIC_GATEWAY_URL over NEXT_STAGE_GATEWAY_URL', async () => {
+test('coverage languages route prefers CORE_API_ENDPOINT over NEXT_STAGE_GATEWAY_URL', async () => {
   const originalFetch = globalThis.fetch;
   const calledUrls: string[] = [];
 
@@ -60,7 +60,7 @@ test('coverage languages route prefers NEXT_PUBLIC_GATEWAY_URL over NEXT_STAGE_G
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://primary.gateway.test',
+        CORE_API_ENDPOINT: 'https://primary.gateway.test',
         NEXT_STAGE_GATEWAY_URL: 'https://fallback.gateway.test'
       },
       async () => {
@@ -96,7 +96,7 @@ test('coverage languages route falls back to NEXT_STAGE_GATEWAY_URL when primary
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: undefined,
+        CORE_API_ENDPOINT: undefined,
         NEXT_STAGE_GATEWAY_URL: 'https://stage.gateway.test'
       },
       async () => {
@@ -152,7 +152,7 @@ test('coverage languages route falls back to GraphQL when REST returns empty and
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const languagesRoute = await importFresh<
@@ -201,7 +201,7 @@ test('coverage languages route returns 502 when GraphQL fallback returns schema 
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const languagesRoute = await importFresh<
@@ -256,7 +256,7 @@ test('coverage collections route marks items missing muxAssetId as non-selectabl
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const collectionsRoute = await importFresh<
@@ -297,7 +297,7 @@ test('coverage collections route marks items missing muxAssetId as non-selectabl
 test('coverage collections route rejects oversized languageIds input', async () => {
   await withEnv(
     {
-      NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+      CORE_API_ENDPOINT: 'https://gateway.test'
     },
     async () => {
       const collectionsRoute = await importFresh<
@@ -367,7 +367,7 @@ test('coverage collections route uses GraphQL fallback mappings when REST collec
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const collectionsRoute = await importFresh<
@@ -443,7 +443,7 @@ test('coverage collections route fails explicitly when fallback payload has no m
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const collectionsRoute = await importFresh<

@@ -96,8 +96,14 @@ test('POST /api/jobs returns 500 for internal persistence failures', async () =>
     );
 
     assert.equal(response.status, 500);
-    const payload = (await response.json()) as { error?: string };
+    const payload = (await response.json()) as {
+      error?: string;
+      code?: string;
+      details?: string;
+    };
     assert.match(payload.error ?? '', /unable to create job/i);
+    assert.equal(payload.code, 'JOB_CREATE_FAILED');
+    assert.ok((payload.details ?? '').length > 0);
   });
 });
 

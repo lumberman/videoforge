@@ -1651,7 +1651,7 @@ export function CoverageReportClient({
 
       {!gatewayConfigured ? (
         <div className="report-error">
-          Set <code>NEXT_PUBLIC_GATEWAY_URL</code> to load collections.
+          Set <code>CORE_API_ENDPOINT</code> to load collections.
         </div>
       ) : errorMessage ? (
         <div className="report-error">{errorMessage}</div>

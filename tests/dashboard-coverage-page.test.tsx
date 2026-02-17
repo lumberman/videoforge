@@ -14,7 +14,7 @@ test('coverage page renders gateway configuration guidance when env vars are mis
   await withTempDataEnv('dashboard-coverage-no-gateway', async () => {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: undefined,
+        CORE_API_ENDPOINT: undefined,
         NEXT_STAGE_GATEWAY_URL: undefined
       },
       async () => {
@@ -23,7 +23,7 @@ test('coverage page renders gateway configuration guidance when env vars are mis
         );
 
         const html = renderToStaticMarkup(await pageModule.default({}));
-        assert.match(html, /NEXT_PUBLIC_GATEWAY_URL/i);
+        assert.match(html, /CORE_API_ENDPOINT/i);
       }
     );
   });
@@ -60,7 +60,7 @@ test('coverage page renders empty state when gateway returns no collections', as
     await withTempDataEnv('dashboard-coverage-empty', async () => {
       await withEnv(
         {
-          NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+          CORE_API_ENDPOINT: 'https://gateway.test'
         },
         async () => {
           const pageModule = await importFresh<
@@ -101,7 +101,7 @@ test('coverage page renders explicit schema error when language fallback query f
     await withTempDataEnv('dashboard-coverage-schema-error', async () => {
       await withEnv(
         {
-          NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+          CORE_API_ENDPOINT: 'https://gateway.test'
         },
         async () => {
           const pageModule = await importFresh<

@@ -21,7 +21,7 @@ test('api/languages search stays local-first and skips remote fetch on local hit
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const routeModule = await importFresh<
@@ -70,7 +70,7 @@ test('api/languages uses remote fallback only on local miss and supports stage g
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: undefined,
+        CORE_API_ENDPOINT: undefined,
         NEXT_STAGE_GATEWAY_URL: 'https://stage.gateway.test'
       },
       async () => {

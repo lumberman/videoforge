@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  AlertTriangle,
   Check,
   CheckSquare,
   ChevronDown,
@@ -107,7 +108,59 @@ type SubmitState =
   | { type: 'idle' }
   | { type: 'submitting' }
   | { type: 'done'; result: CoverageSubmitResult }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string; details?: string[]; nonce: number };
+
+type SubmitFeedbackTone = 'neutral' | 'success' | 'error'
+
+type SubmitFeedback = {
+  tone: SubmitFeedbackTone
+  message: string
+  details?: string[]
+  nonce?: number
+}
+
+type VideoQaDebugState = {
+  video: ClientVideo
+  collectionTitle: string | null
+}
+
+type VideoJobDebugPayload = {
+  media: {
+    id: string
+    title: string
+    collectionTitle: string | null
+    subtitleStatus: CoverageStatus
+    voiceoverStatus: CoverageStatus
+    metadataStatus: CoverageStatus
+    metaStatus: CoverageStatus
+    meta: MetaCompleteness
+    durationSeconds: number | null
+    thumbnailUrl: string | null
+    watchUrl: string | null
+  }
+  mapping: {
+    selectable: boolean
+    muxAssetId: string | null
+    unselectableReason: string | null
+    selectedLanguages: string[]
+    options: {
+      generateVoiceover: false
+      uploadMux: false
+      notifyCms: false
+    }
+    willCreateJob: boolean
+    skipReason: string | null
+    createJobPayload: {
+      muxAssetId: string
+      languages: string[]
+      options: {
+        generateVoiceover: false
+        uploadMux: false
+        notifyCms: false
+      }
+    } | null
+  }
+}
 
 type CoverageJobsQueueRedirectInput = {
   submitState: SubmitState
@@ -186,6 +239,150 @@ export function getCoverageJobsQueueRedirectUrl({
     failed: submitState.result.failed,
     skipped: submitState.result.skipped
   })
+}
+
+export function buildCoverageSubmitFeedback(
+  submitState: SubmitState
+): SubmitFeedback | null {
+  if (submitState.type === 'idle') {
+    return null
+  }
+
+  if (submitState.type === 'submitting') {
+    return {
+      tone: 'neutral',
+      message: 'Submitting translation jobs...'
+    }
+  }
+
+  if (submitState.type === 'error') {
+    return {
+      tone: 'error',
+      message: submitState.message,
+      details: submitState.details,
+      nonce: submitState.nonce
+    }
+  }
+
+  const { created, failed, skipped } = submitState.result
+
+  if (created > 0) {
+    if (failed > 0 || skipped > 0) {
+      return {
+        tone: 'success',
+        message: `Queued ${created} job${created === 1 ? '' : 's'}. Failed: ${failed}. Skipped: ${skipped}. Redirecting to queue...`
+      }
+    }
+
+    return {
+      tone: 'success',
+      message: `Queued ${created} job${created === 1 ? '' : 's'}. Redirecting to queue...`
+    }
+  }
+
+  const firstFailureReason = submitState.result.items.find(
+    (item) => item.status === 'failed' && item.reason
+  )?.reason
+  const firstSkipReason = submitState.result.items.find(
+    (item) => item.status === 'skipped' && item.reason
+  )?.reason
+  const reason = firstFailureReason ?? firstSkipReason
+
+  const errorDetails = submitState.result.items
+    .filter((item) => item.status !== 'created')
+    .map((item) => {
+      const outcomeLabel = item.status === 'failed' ? 'FAILED' : 'SKIPPED'
+      const muxLabel = item.muxAssetId ? ` · muxAssetId: ${item.muxAssetId}` : ''
+      const reasonLabel = item.reason ?? 'No reason provided.'
+      return `${outcomeLabel} · ${item.title} (${item.mediaId})${muxLabel} · ${reasonLabel}`
+    })
+
+  return {
+    tone: 'error',
+    message: reason
+      ? `No jobs were queued. Failed: ${failed}. Skipped: ${skipped}. ${reason}`
+      : `No jobs were queued. Failed: ${failed}. Skipped: ${skipped}.`,
+    details: errorDetails
+  }
+}
+
+export function buildVideoJobDebugPayload(
+  video: ClientVideo,
+  selectedLanguageIds: string[],
+  collectionTitle: string | null
+): VideoJobDebugPayload {
+  const options = {
+    generateVoiceover: false as const,
+    uploadMux: false as const,
+    notifyCms: false as const
+  }
+  const willCreateJob =
+    video.selectable && Boolean(video.muxAssetId) && selectedLanguageIds.length > 0
+  const skipReason = !video.selectable
+    ? video.unselectableReason ?? 'Video is marked non-selectable.'
+    : !video.muxAssetId
+      ? 'Missing muxAssetId mapping.'
+      : selectedLanguageIds.length === 0
+        ? 'No selected languages.'
+        : null
+
+  return {
+    media: {
+      id: video.id,
+      title: video.title,
+      collectionTitle,
+      subtitleStatus: video.subtitleStatus,
+      voiceoverStatus: video.voiceoverStatus,
+      metadataStatus: video.metadataStatus,
+      metaStatus: video.metaStatus,
+      meta: video.meta,
+      durationSeconds: video.durationSeconds,
+      thumbnailUrl: video.thumbnailUrl,
+      watchUrl: video.watchUrl
+    },
+    mapping: {
+      selectable: video.selectable,
+      muxAssetId: video.muxAssetId,
+      unselectableReason: video.unselectableReason,
+      selectedLanguages: selectedLanguageIds,
+      options,
+      willCreateJob,
+      skipReason,
+      createJobPayload:
+        willCreateJob && video.muxAssetId
+          ? {
+              muxAssetId: video.muxAssetId,
+              languages: selectedLanguageIds,
+              options
+            }
+          : null
+    }
+  }
+}
+
+export function getSelectableVideoIdsForSelection(
+  videos: Array<{ id: string; selectable: boolean }>
+): string[] {
+  return videos
+    .filter((video) => video.selectable)
+    .map((video) => video.id)
+}
+
+export function buildUnselectableVideoSubmitError(
+  video: {
+    id: string
+    title: string
+    unselectableReason: string | null
+  }
+): Extract<SubmitState, { type: 'error' }> {
+  const reason =
+    video.unselectableReason ?? 'Missing muxAssetId mapping for this item.'
+  return {
+    type: 'error',
+    message: "This item is not uploaded to Mux and can't be processed.",
+    details: [`${video.title} (${video.id}) · ${reason}`],
+    nonce: Date.now()
+  }
 }
 
 /**
@@ -676,13 +873,15 @@ function Checkbox({
   indeterminate,
   onChange,
   label,
-  className
+  className,
+  disabled = false
 }: {
   checked: boolean
   indeterminate?: boolean
   onChange: () => void
   label?: string
   className?: string
+  disabled?: boolean
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -694,13 +893,17 @@ function Checkbox({
 
   return (
     <label
-      className={`checkbox${className ? ` ${className}` : ''}`}
+      className={`checkbox${className ? ` ${className}` : ''}${
+        disabled ? ' is-disabled' : ''
+      }`}
       onClick={(event) => event.stopPropagation()}
+      aria-disabled={disabled}
     >
       <input
         ref={inputRef}
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={onChange}
       />
       <span className="checkbox-box" aria-hidden="true" />
@@ -818,7 +1021,7 @@ function SelectableVideoTile({
   status: CoverageStatus
   statusLabel: string
   isSelected: boolean
-  onToggle: () => void
+  onToggle: (event: React.MouseEvent<HTMLButtonElement>) => void
   onHoverStart: () => void
   onHoverEnd: () => void
 }) {
@@ -827,18 +1030,29 @@ function SelectableVideoTile({
       ? video.watchUrl
         ? 'Open video'
         : 'No action'
-      : 'Select for translation'
-  const title = `${actionLabel}: ${video.title} — ${statusLabel}`
+      : video.selectable
+        ? 'Select for translation'
+        : 'Unavailable for translation'
+  const debugHint = mode === 'select' ? ' · Option+Click: QA debug' : ''
+  const unselectableHint =
+    mode === 'select' && !video.selectable
+      ? ` · ${video.unselectableReason ?? 'Missing muxAssetId mapping.'}`
+      : ''
+  const title = `${actionLabel}: ${video.title} — ${statusLabel}${debugHint}`
+  const fullTitle = `${title}${unselectableHint}`
+  const baseClass = `tile tile--video tile--${status}${
+    !video.selectable ? ' is-unselectable' : ''
+  }`
 
   if (mode === 'explore') {
     if (video.watchUrl) {
       return (
         <a
-          className={`tile tile--video tile--${status} tile--explore tile--link`}
+          className={`${baseClass} tile--explore tile--link`}
           href={video.watchUrl}
           target="_blank"
           rel="noopener noreferrer"
-          title={title}
+          title={fullTitle}
           onMouseEnter={onHoverStart}
           onMouseLeave={onHoverEnd}
           onFocus={onHoverStart}
@@ -852,8 +1066,8 @@ function SelectableVideoTile({
     }
     return (
       <span
-        className={`tile tile--video tile--${status} tile--explore`}
-        title={title}
+        className={`${baseClass} tile--explore`}
+        title={fullTitle}
         onMouseEnter={onHoverStart}
         onMouseLeave={onHoverEnd}
         onFocus={onHoverStart}
@@ -869,12 +1083,17 @@ function SelectableVideoTile({
   return (
     <button
       type="button"
-      className={`tile tile--video tile--${status} tile--select${
+      className={`${baseClass} tile--select${
         isSelected ? ' is-selected' : ''
       }`}
-      title={title}
+      title={fullTitle}
       aria-pressed={isSelected}
-      aria-label={`Select ${video.title}`}
+      aria-label={
+        video.selectable
+          ? `Select ${video.title}`
+          : `${video.title} is unavailable for translation`
+      }
+      aria-disabled={!video.selectable}
       onClick={onToggle}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -896,6 +1115,7 @@ export function TranslationActionBar({
   hoveredVideo,
   statusLabels,
   isSubmitting,
+  submitFeedback,
   isInteractive,
   onClear,
   onTranslate
@@ -906,11 +1126,23 @@ export function TranslationActionBar({
   hoveredVideo: HoveredVideoDetails | null
   statusLabels: Record<CoverageStatus, string>
   isSubmitting: boolean
+  submitFeedback: SubmitFeedback | null
   isInteractive: boolean
   onClear: () => void
   onTranslate: () => void
 }) {
   const statusLabel = hoveredVideo ? statusLabels[hoveredVideo.status] : null
+  const inlineFeedback =
+    submitFeedback && submitFeedback.tone !== 'error' ? submitFeedback : null
+  const toastFeedback =
+    submitFeedback && submitFeedback.tone === 'error' ? submitFeedback : null
+  const [isErrorToastDismissed, setIsErrorToastDismissed] = useState(false)
+  const [isErrorToastExpanded, setIsErrorToastExpanded] = useState(false)
+
+  useEffect(() => {
+    setIsErrorToastDismissed(false)
+    setIsErrorToastExpanded(false)
+  }, [toastFeedback?.message, toastFeedback?.details?.join('|'), toastFeedback?.nonce])
 
   return (
     <div
@@ -937,9 +1169,14 @@ export function TranslationActionBar({
               className="translation-primary"
               onClick={onTranslate}
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
             >
-              <Languages className="icon" aria-hidden="true" />
-              Translate Now
+              {isSubmitting ? (
+                <RefreshCw className="icon is-spinning" aria-hidden="true" />
+              ) : (
+                <Languages className="icon" aria-hidden="true" />
+              )}
+              {isSubmitting ? 'Submitting...' : 'Translate Now'}
             </button>
             <button
               type="button"
@@ -952,6 +1189,14 @@ export function TranslationActionBar({
               <XCircle className="icon" aria-hidden="true" />
             </button>
           </div>
+          {inlineFeedback ? (
+            <div
+              className={`translation-feedback translation-feedback--${inlineFeedback.tone}`}
+              role="status"
+            >
+              {inlineFeedback.message}
+            </div>
+          ) : null}
         </div>
       )}
       <div className="translation-view translation-view--detail">
@@ -986,6 +1231,48 @@ export function TranslationActionBar({
           </div>
         )}
       </div>
+      {toastFeedback && !isErrorToastDismissed ? (
+        <div className="translation-toast-wrap">
+          <div className="translation-toast translation-toast--error" role="status">
+            <button
+              type="button"
+              className="translation-toast-main"
+              onClick={() => setIsErrorToastExpanded((prev) => !prev)}
+              aria-expanded={isErrorToastExpanded}
+              aria-label="Open translation error details"
+            >
+              <AlertTriangle className="icon" aria-hidden="true" />
+              <span className="translation-toast-message">{toastFeedback.message}</span>
+            </button>
+            <span className="translation-toast-actions">
+              <button
+                type="button"
+                className="translation-toast-toggle"
+                onClick={() => setIsErrorToastExpanded((prev) => !prev)}
+              >
+                {isErrorToastExpanded ? 'Hide error details' : 'Show error details'}
+              </button>
+              <button
+                type="button"
+                className="translation-toast-dismiss"
+                aria-label="Dismiss translation error"
+                onClick={() => setIsErrorToastDismissed(true)}
+              >
+                <XCircle className="icon" aria-hidden="true" />
+              </button>
+            </span>
+          </div>
+          {isErrorToastExpanded && toastFeedback.details && toastFeedback.details.length > 0 ? (
+            <div className="translation-toast-details" role="status">
+              {toastFeedback.details.map((detail, index) => (
+                <div key={`${detail}-${index}`} className="translation-toast-detail-line">
+                  {detail}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -1028,7 +1315,11 @@ type CollectionCardProps = {
   onToggleExpanded: (collectionId: string) => void
   onToggleCollection: (collection: ClientCollection) => void
   onFilterCollection: (collectionId: string, filter: CoverageFilter) => void
-  onToggleVideo: (videoId: string) => void
+  onToggleVideo: (
+    video: ClientVideo,
+    collectionTitle: string,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => void
   onSelectByStatusInCollection: (
     collection: ClientCollection,
     status: CoverageStatus
@@ -1087,13 +1378,17 @@ const CollectionCard = memo(function CollectionCard({
     })
   }, [filteredCollectionVideos, getReportStatus])
 
+  const collectionSelectableIds = useMemo(
+    () => getSelectableVideoIdsForSelection(collection.videos),
+    [collection.videos]
+  )
   const collectionSelectedCount = useMemo(
-    () => collection.videos.filter((video) => selectedSet.has(video.id)).length,
-    [collection.videos, selectedSet]
+    () => collectionSelectableIds.filter((id) => selectedSet.has(id)).length,
+    [collectionSelectableIds, selectedSet]
   )
   const collectionAllSelected =
-    collection.videos.length > 0 &&
-    collectionSelectedCount === collection.videos.length
+    collectionSelectableIds.length > 0 &&
+    collectionSelectedCount === collectionSelectableIds.length
 
   return (
     <section
@@ -1154,6 +1449,7 @@ const CollectionCard = memo(function CollectionCard({
                   onChange={() => onToggleCollection(collection)}
                   label=""
                   className="collection-checkbox"
+                  disabled={collectionSelectableIds.length === 0}
                 />
               )}
             </div>
@@ -1212,7 +1508,9 @@ const CollectionCard = memo(function CollectionCard({
               ? `${statusLabel} (${video.meta.completed}/${video.meta.total})`
               : statusLabel
           const tileActionLabel = isSelectMode
-            ? 'Select for translation'
+            ? video.selectable
+              ? 'Select for translation'
+              : 'Unavailable for translation'
             : video.watchUrl
               ? 'Open video'
               : 'No action'
@@ -1224,8 +1522,10 @@ const CollectionCard = memo(function CollectionCard({
                   type="button"
                   className={`tile tile--video tile--${status} tile--select detail-tile${
                     selectedSet.has(video.id) ? ' is-selected' : ''
-                  }`}
-                  onClick={() => onToggleVideo(video.id)}
+                  }${!video.selectable ? ' is-unselectable' : ''}`}
+                  onClick={(event) =>
+                    onToggleVideo(video, collection.title, event)
+                  }
                   onMouseEnter={() =>
                     onHoverVideo({
                       video,
@@ -1243,8 +1543,17 @@ const CollectionCard = memo(function CollectionCard({
                   }
                   onBlur={() => onHoverVideo(null)}
                   aria-pressed={selectedSet.has(video.id)}
-                  aria-label={`Select ${video.title}`}
-                  title={`${tileActionLabel}: ${video.title} — ${tileStatusLabel}`}
+                  aria-label={
+                    video.selectable
+                      ? `Select ${video.title}`
+                      : `${video.title} is unavailable for translation`
+                  }
+                  aria-disabled={!video.selectable}
+                  title={`${tileActionLabel}: ${video.title} — ${tileStatusLabel}${
+                    !video.selectable
+                      ? ` · ${video.unselectableReason ?? 'Missing muxAssetId mapping.'}`
+                      : ''
+                  } · Option+Click: QA debug`}
                 >
                   <span className="tile-checkbox" aria-hidden="true">
                     <span className="tile-checkbox-box" aria-hidden="true" />
@@ -1317,7 +1626,9 @@ const CollectionCard = memo(function CollectionCard({
               status={status}
               statusLabel={tileStatusLabel}
               isSelected={selectedSet.has(video.id)}
-              onToggle={() => onToggleVideo(video.id)}
+              onToggle={(event) =>
+                onToggleVideo(video, collection.title, event)
+              }
               onHoverStart={() =>
                 onHoverVideo({
                   video,
@@ -1368,6 +1679,7 @@ export function CoverageReportClient({
   const [visibleCount, setVisibleCount] = useState(COLLECTIONS_PER_BATCH)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>({ type: 'idle' });
+  const [videoQaDebugState, setVideoQaDebugState] = useState<VideoQaDebugState | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const loadMoreTimeoutRef = useRef<number | null>(null)
   const hasQueuedJobsRedirectRef = useRef(false)
@@ -1545,6 +1857,9 @@ export function CoverageReportClient({
     return cachedCollections.reduce(
       (acc, collection) => {
         for (const video of collection.videos) {
+          if (!video.selectable) {
+            continue
+          }
           acc[video.subtitleStatus].push(video.id)
         }
         return acc
@@ -1553,14 +1868,34 @@ export function CoverageReportClient({
     )
   }, [cachedCollections])
 
-  const handleToggleVideo = useCallback((videoId: string) => {
+  const handleToggleVideo = useCallback((
+    video: ClientVideo,
+    collectionTitle: string,
+    event?: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    if (event?.altKey) {
+      event.preventDefault()
+      setVideoQaDebugState({ video, collectionTitle })
+      return
+    }
+
+    if (!video.selectable) {
+      setSubmitState(buildUnselectableVideoSubmitError(video))
+      return
+    }
+
     setSelectedIds((prev) =>
-      prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId]
+      prev.includes(video.id)
+        ? prev.filter((id) => id !== video.id)
+        : [...prev, video.id]
     )
   }, [])
 
   const handleToggleCollection = useCallback((collection: ClientCollection) => {
-    const collectionIds = collection.videos.map((video) => video.id)
+    const collectionIds = getSelectableVideoIdsForSelection(collection.videos)
+    if (collectionIds.length === 0) {
+      return
+    }
     const allSelected = collectionIds.every((id) => selectedSet.has(id))
     if (allSelected) {
       setSelectedIds((prev) => prev.filter((id) => !collectionIds.includes(id)))
@@ -1584,7 +1919,7 @@ export function CoverageReportClient({
     status: CoverageStatus
   ) => {
     const statusIds = collection.videos
-      .filter((video) => video.subtitleStatus === status)
+      .filter((video) => video.subtitleStatus === status && video.selectable)
       .map((video) => video.id)
     const allSelected =
       statusIds.length > 0 && statusIds.every((id) => selectedSet.has(id))
@@ -1617,7 +1952,8 @@ export function CoverageReportClient({
     if (selectedIds.length === 0) {
       setSubmitState({
         type: 'error',
-        message: 'Select at least one media item before submitting.'
+        message: 'Select at least one media item before submitting.',
+        nonce: Date.now()
       });
       return;
     }
@@ -1625,7 +1961,8 @@ export function CoverageReportClient({
     if (selectedLanguageIds.length === 0) {
       setSubmitState({
         type: 'error',
-        message: 'Select at least one target language.'
+        message: 'Select at least one target language.',
+        nonce: Date.now()
       });
       return;
     }
@@ -1659,9 +1996,17 @@ export function CoverageReportClient({
           })
         });
 
-        const payload = (await response.json()) as { jobId?: string; error?: string };
+        const payload = (await response.json()) as {
+          jobId?: string;
+          error?: string;
+          details?: string;
+          code?: string;
+        };
         if (!response.ok || !payload.jobId) {
-          throw new Error(payload.error ?? 'Failed to create job.');
+          const message = [payload.error, payload.details, payload.code]
+            .filter((value): value is string => Boolean(value && value.trim()))
+            .join(' | ');
+          throw new Error(message || 'Failed to create job.');
         }
         return { jobId: payload.jobId };
       }
@@ -1703,6 +2048,21 @@ export function CoverageReportClient({
     []
   )
 
+  useEffect(() => {
+    if (!videoQaDebugState) return
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setVideoQaDebugState(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeydown)
+    return () => {
+      window.removeEventListener('keydown', handleKeydown)
+    }
+  }, [videoQaDebugState])
+
   const handleLoadMore = useCallback(() => {
     if (isLoadingMore) return
     setIsLoadingMore(true)
@@ -1733,6 +2093,7 @@ export function CoverageReportClient({
   const lastUpdatedLabel = cacheMeta?.lastUpdated
     ? formatTimeAgo(cacheMeta.lastUpdated, now)
     : 'unknown'
+  const submitFeedback = buildCoverageSubmitFeedback(submitState)
 
   return (
     <div className="report-shell">
@@ -1837,26 +2198,11 @@ export function CoverageReportClient({
             </button>
           </div>
         )}
-        {isSubtitleReport && (
-          <div className="selection-actions">
-            <TranslationActionBar
-              selectedCount={selectedIds.length}
-              languageLabels={targetLanguageLabels}
-              estimatedCostLabel={estimatedCostLabel}
-              hoveredVideo={hoveredVideo}
-              statusLabels={reportConfig.statusLabels}
-              isSubmitting={submitState.type === 'submitting'}
-              isInteractive={isSelectMode}
-              onClear={handleClearSelection}
-              onTranslate={handleTranslate}
-            />
-          </div>
-        )}
       </section>
 
       {!gatewayConfigured ? (
         <div className="report-error">
-          Set <code>NEXT_PUBLIC_GATEWAY_URL</code> to load collections.
+          Set <code>CORE_API_ENDPOINT</code> to load collections.
         </div>
       ) : errorMessage ? (
         <div className="report-error">{errorMessage}</div>
@@ -1918,23 +2264,54 @@ export function CoverageReportClient({
           hoveredVideo={hoveredVideo}
           statusLabels={reportConfig.statusLabels}
           isSubmitting={submitState.type === 'submitting'}
+          submitFeedback={submitFeedback}
           isInteractive={isSelectMode}
           onClear={handleClearSelection}
           onTranslate={handleTranslate}
         />
       )}
 
-      {submitState.type === 'error' && (
-        <div className="report-error" role="status">
-          {submitState.message}
+      {videoQaDebugState ? (
+        <div
+          className="qa-debug-modal-backdrop"
+          role="presentation"
+          onClick={() => setVideoQaDebugState(null)}
+        >
+          <div
+            className="qa-debug-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Media mapping debug details"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="qa-debug-modal-header">
+              <h2>Media QA Debug</h2>
+              <button
+                type="button"
+                className="qa-debug-modal-close"
+                onClick={() => setVideoQaDebugState(null)}
+                aria-label="Close media debug modal"
+              >
+                <XCircle className="icon" aria-hidden="true" />
+              </button>
+            </header>
+            <p className="qa-debug-modal-hint">
+              Opened via Option/Alt + click. This shows metadata and job mapping for this media item.
+            </p>
+            <pre className="qa-debug-modal-pre">
+              {JSON.stringify(
+                buildVideoJobDebugPayload(
+                  videoQaDebugState.video,
+                  selectedLanguageIds,
+                  videoQaDebugState.collectionTitle
+                ),
+                null,
+                2
+              )}
+            </pre>
+          </div>
         </div>
-      )}
-      {submitState.type === 'done' && (
-        <div className="report-error report-error--success" role="status">
-          Created: {submitState.result.created} · Failed: {submitState.result.failed} · Skipped:{' '}
-          {submitState.result.skipped}
-        </div>
-      )}
+      ) : null}
 
     </div>
   )

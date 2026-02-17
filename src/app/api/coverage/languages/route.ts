@@ -10,7 +10,7 @@ function getGatewayErrorResponse() {
   return NextResponse.json(
     {
       error:
-        'Coverage gateway is not configured. Set NEXT_PUBLIC_GATEWAY_URL or NEXT_STAGE_GATEWAY_URL.'
+        'Coverage gateway is not configured. Set CORE_API_ENDPOINT or NEXT_STAGE_GATEWAY_URL.'
     },
     { status: 503 }
   );

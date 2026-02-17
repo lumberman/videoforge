@@ -3,7 +3,7 @@ import { languageSlugs } from '@core/prisma/languages/__generated__/languageSlug
 import { CoverageReportClient } from './CoverageReportClient'
 
 const DEFAULT_LANGUAGE_ID = '529'
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
+const GATEWAY_URL = process.env.CORE_API_ENDPOINT
 const WATCH_URL = process.env.NEXT_PUBLIC_WATCH_URL
 
 function formatLanguageLabel(slug: string): string {

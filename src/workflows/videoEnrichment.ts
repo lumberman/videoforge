@@ -46,10 +46,15 @@ function isRetryableStepError(error: unknown): boolean {
     return true;
   }
 
+  const isDeterministicOperationMismatch =
+    error.code === 'MUX_AI_OPERATION_FAILED' &&
+    /none of \[.*\] are exported by the module/i.test(error.message);
+
   return !(
     error.code === 'MUX_AI_CONFIG_MISSING' ||
     error.code === 'MUX_AI_IMPORT_FAILED' ||
-    error.code === 'MUX_AI_INVALID_RESPONSE'
+    error.code === 'MUX_AI_INVALID_RESPONSE' ||
+    isDeterministicOperationMismatch
   );
 }
 
@@ -191,21 +196,21 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       jobId,
       step: 'chapters',
       world,
-      task: async () => generateChapters(transcript)
+      task: async () => generateChapters(job.muxAssetId, transcript)
     });
 
     const metadata = await runStep({
       jobId,
       step: 'metadata',
       world,
-      task: async () => extractMetadata(transcript)
+      task: async () => extractMetadata(job.muxAssetId, transcript)
     });
 
     const embeddings = await runStep({
       jobId,
       step: 'embeddings',
       world,
-      task: async () => generateEmbeddings(transcript.text)
+      task: async () => generateEmbeddings(job.muxAssetId, transcript.text)
     });
 
     const translations = await runStep({
@@ -213,7 +218,7 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       step: 'translation',
       world,
       skip: job.languages.length === 0,
-      task: async () => translateTranscript(transcript, job.languages)
+      task: async () => translateTranscript(job.muxAssetId, transcript, job.languages)
     });
 
     const voiceoverUrl = await runStep({

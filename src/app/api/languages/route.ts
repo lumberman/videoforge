@@ -91,7 +91,7 @@ function normalizeText(value: string): string {
 
 function resolveGatewayUrl(envMap: NodeJS.ProcessEnv = process.env): string {
   return (
-    envMap.NEXT_PUBLIC_GATEWAY_URL?.trim() ??
+    envMap.CORE_API_ENDPOINT?.trim() ??
     envMap.NEXT_STAGE_GATEWAY_URL?.trim() ??
     ''
   )

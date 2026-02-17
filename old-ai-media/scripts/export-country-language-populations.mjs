@@ -1,11 +1,11 @@
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
+const GATEWAY_URL = process.env.CORE_API_ENDPOINT
 const ENGLISH_LANGUAGE_ID = '529'
 
 if (!GATEWAY_URL) {
-  console.error('Missing NEXT_PUBLIC_GATEWAY_URL env var.')
+  console.error('Missing CORE_API_ENDPOINT env var.')
   process.exit(1)
 }
 

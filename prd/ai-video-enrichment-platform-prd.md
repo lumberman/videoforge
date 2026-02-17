@@ -241,7 +241,7 @@ Response includes:
   - Added `/videoforge/src/services/coverage-gateway.ts` for gateway resolution, request handling, and payload normalization.
   - Kept workflow definitions free of direct external API calls.
 - Added deterministic gateway configuration precedence:
-  - `NEXT_PUBLIC_GATEWAY_URL`
+  - `CORE_API_ENDPOINT`
   - fallback `NEXT_STAGE_GATEWAY_URL`
   - optional watch URL via `NEXT_PUBLIC_WATCH_URL`
 - Implemented deterministic batch ordering flow from coverage selection:

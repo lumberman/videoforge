@@ -46,7 +46,7 @@ test('fetchCoverageLanguages GraphQL fallback uses schema-safe native label alia
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const module = await importFresh<typeof import('../src/services/coverage-gateway')>(
@@ -89,7 +89,7 @@ test('fetchCoverageLanguages throws deterministic error when GraphQL fallback re
   try {
     await withEnv(
       {
-        NEXT_PUBLIC_GATEWAY_URL: 'https://gateway.test'
+        CORE_API_ENDPOINT: 'https://gateway.test'
       },
       async () => {
         const module = await importFresh<typeof import('../src/services/coverage-gateway')>(

@@ -50,10 +50,18 @@ export function NewJobForm() {
         })
       });
 
-      const json = (await response.json()) as { jobId?: string; error?: string };
+      const json = (await response.json()) as {
+        jobId?: string;
+        error?: string;
+        details?: string;
+        code?: string;
+      };
 
       if (!response.ok || !json.jobId) {
-        throw new Error(json.error ?? 'Failed to create job.');
+        const message = [json.error, json.details, json.code]
+          .filter((value): value is string => Boolean(value && value.trim()))
+          .join(' | ');
+        throw new Error(message || 'Failed to create job.');
       }
 
       setStatus({

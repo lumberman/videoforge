@@ -781,7 +781,7 @@ async function fetchCoverageCollectionsFromGraphql(
 }
 
 export function resolveCoverageGatewayBaseUrl(envMap: NodeJS.ProcessEnv = process.env): string | null {
-  const primary = envMap.NEXT_PUBLIC_GATEWAY_URL?.trim();
+  const primary = envMap.CORE_API_ENDPOINT?.trim();
   const fallback = envMap.NEXT_STAGE_GATEWAY_URL?.trim();
   const url = primary || fallback;
   return url ? normalizeBaseUrl(url) : null;

@@ -88,6 +88,114 @@ test('mux adapter throws structured import error when module import fails', asyn
   );
 });
 
+test('mux adapter falls back to @mux/ai root namespace when subpath import is missing', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          throw new Error("Cannot find module '@mux/ai/primitives'");
+        }
+
+        if (moduleName === '@mux/ai') {
+          return {
+            primitives: {
+              async transcribe() {
+                return {
+                  language: 'en',
+                  text: 'root namespace transcript',
+                  segments: [{ startSec: 0, endSec: 1, text: 'root namespace transcript' }]
+                };
+              }
+            }
+          };
+        }
+
+        return {};
+      });
+
+      try {
+        const transcript = await muxAiModule.transcribeWithMuxAi('mux-asset-root-fallback');
+        assert.equal(transcript.language, 'en');
+        assert.equal(transcript.text, 'root namespace transcript');
+      } finally {
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter reports combined import failure when subpath and root fallback both fail', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          throw new Error("Cannot find module '@mux/ai/primitives'");
+        }
+        if (moduleName === '@mux/ai') {
+          throw new Error("Cannot find module '@mux/ai'");
+        }
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-no-fallback'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_IMPORT_FAILED');
+            assert.match(error.message, /and @mux\/ai fallback/i);
+            return true;
+          }
+        );
+      } finally {
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter classifies import-time env validation failures as config errors', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      muxAiModule.setMuxAiModuleImporterForTests(async () => {
+        throw new Error('❌ Invalid env: {}');
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-invalid-env'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_CONFIG_MISSING');
+            assert.match(error.message, /environment is invalid/i);
+            return true;
+          }
+        );
+      } finally {
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
 test('mux adapter throws structured invalid-response error when mux functions return bad shape', async () => {
   await withEnv(
     {
@@ -145,6 +253,7 @@ test('translation service deduplicates languages while using mux adapter boundar
       try {
         const translationModule = await import('../src/services/translation');
         const translations = await translationModule.translateTranscript(
+          'mux-asset-translation-test',
           {
             language: 'en',
             text: 'Hello world',
@@ -159,6 +268,81 @@ test('translation service deduplicates languages while using mux adapter boundar
           ['es', 'fr']
         );
       } finally {
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter resolves numeric language IDs to ISO codes before caption translation workflow', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined,
+      CORE_API_ENDPOINT: 'https://core.test/graphql'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      let translatedFrom: string | null = null;
+      let translatedTo: string | null = null;
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input, init) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : String(input.url);
+        if (url === 'https://core.test/graphql') {
+          return new Response(
+            JSON.stringify({
+              data: {
+                language: {
+                  id: '3934',
+                  bcp47: 'ru',
+                  iso3: 'rus'
+                }
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/workflows') {
+          return {
+            async translateCaptions(_: string, from: string, to: string) {
+              translatedFrom = from;
+              translatedTo = to;
+              return {
+                targetLanguageCode: to,
+                translatedVtt: 'WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nPrivet'
+              };
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        const translated = await muxAiModule.translateWithMuxAi(
+          'mux-asset-language-id',
+          {
+            language: 'en',
+            text: 'Hello world',
+            segments: [{ startSec: 0, endSec: 1, text: 'Hello world' }]
+          },
+          '3934'
+        );
+
+        assert.equal(translatedFrom, 'en');
+        assert.equal(translatedTo, 'ru');
+        assert.equal(translated.language, '3934');
+        assert.equal(translated.text, 'Privet');
+      } finally {
+        globalThis.fetch = originalFetch;
         muxAiModule.setMuxAiModuleImporterForTests();
       }
     }
@@ -182,7 +366,7 @@ test('mux primitives preprocessing is non-fatal and returns warnings', async () 
   );
 });
 
-test('mux adapter emits warning when optional primitives path falls back to workflow', async () => {
+test('mux adapter silently falls back to workflow when legacy primitives transcription shape is incompatible', async () => {
   await withEnv(
     {
       MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
@@ -222,7 +406,7 @@ test('mux adapter emits warning when optional primitives path falls back to work
         assert.equal(transcript.language, 'en');
         assert.equal(
           warnings.some((line) => line.includes('[mux-ai][optional-fallback]')),
-          true
+          false
         );
       } finally {
         console.warn = originalWarn;

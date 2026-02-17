@@ -25,7 +25,7 @@ Chosen approach balances speed and safety by reusing proven UI logic while adapt
 ## Key Decisions
 - **Route isolation first**: add migrated UI under a new route (for example `/dashboard/coverage`) so existing jobs screens stay stable.
 - **No global CSS copy**: port legacy styles into scoped CSS modules (or strict namespace class root) to avoid collisions with `/videoforge/src/app/globals.css`.
-- **Gateway-first external data source**: language slugs and media API data are always fetched from external gateway (`NEXT_PUBLIC_GATEWAY_URL` fallback to `NEXT_STAGE_GATEWAY_URL`), replacing monorepo-internal imports like `@core/prisma/.../languageSlugs`.
+- **Gateway-first external data source**: language slugs and media API data are always fetched from external gateway (`CORE_API_ENDPOINT` fallback to `NEXT_STAGE_GATEWAY_URL`), replacing monorepo-internal imports like `@core/prisma/.../languageSlugs`.
 - **Adapter boundary for legacy data**: keep gateway GraphQL/language-fetch logic behind service adapters and route handlers, not directly in UI components.
 - **Preserve current job API contract**: keep `POST /api/jobs` unchanged; batch ordering will call existing endpoint repeatedly (or via thin wrapper route if needed later).
 - **Selection drives job payload**: `muxAssetId` must be derived from selected media items in coverage report and passed into job creation payload.
@@ -46,7 +46,7 @@ Chosen approach balances speed and safety by reusing proven UI logic while adapt
 
 3. Migrate data layer via adapters
 - Port collection/language fetching from `/videoforge/old-app-code/ai-media/src/app/page.tsx` and `/videoforge/old-app-code/ai-media/src/app/api/languages/route.ts` into current adapter style.
-- Add optional env accessors for `NEXT_PUBLIC_GATEWAY_URL`, `NEXT_STAGE_GATEWAY_URL`, and watch URL configuration in `/videoforge/src/config/env.ts`, with deterministic precedence.
+- Add optional env accessors for `CORE_API_ENDPOINT`, `NEXT_STAGE_GATEWAY_URL`, and watch URL configuration in `/videoforge/src/config/env.ts`, with deterministic precedence.
 - Move static language population data into current repo-owned location and reference deterministically.
 
 4. Integrate order flow with current workflow engine
@@ -62,15 +62,15 @@ Chosen approach balances speed and safety by reusing proven UI logic while adapt
 
 ## Conflict Map and Mitigation
 - Legacy dependency conflict: `@core/prisma/.../languageSlugs` is unavailable.
-  - Mitigation: resolve all language labels/slugs via gateway adapters (`NEXT_PUBLIC_GATEWAY_URL` or `NEXT_STAGE_GATEWAY_URL`) and remove monorepo dependency assumptions.
+  - Mitigation: resolve all language labels/slugs via gateway adapters (`CORE_API_ENDPOINT` or `NEXT_STAGE_GATEWAY_URL`) and remove monorepo dependency assumptions.
 - Styling conflict: legacy `globals.css` redefines `body/main/code` and many shared selectors.
   - Mitigation: scoped styles only; no direct merge into app global stylesheet.
 - Contract conflict: legacy selection returns video IDs; current jobs require `muxAssetId`.
   - Mitigation: enforce selection payload enrichment to include `muxAssetId`; block submit and surface actionable errors for items lacking mapping.
 - UX contract conflict: legacy “Translate Now” was a stub.
   - Mitigation: define real order semantics (single/batch job creation, success/error summary).
-- Runtime/env conflict: old uses `NEXT_PUBLIC_GATEWAY_URL` and `NEXT_PUBLIC_WATCH_URL`, current env model does not expose them.
-  - Mitigation: add optional typed env getters with precedence (`NEXT_PUBLIC_GATEWAY_URL` first, fallback `NEXT_STAGE_GATEWAY_URL`) and warning-safe behavior.
+- Runtime/env conflict: old uses `CORE_API_ENDPOINT` and `NEXT_PUBLIC_WATCH_URL`, current env model does not expose them.
+  - Mitigation: add optional typed env getters with precedence (`CORE_API_ENDPOINT` first, fallback `NEXT_STAGE_GATEWAY_URL`) and warning-safe behavior.
 
 ## Open Questions
 - None currently.

@@ -7,6 +7,19 @@ export const dynamic = 'force-dynamic';
 
 class PayloadValidationError extends Error {}
 
+type CreateJobErrorResponse = {
+  error: string;
+  code?: string;
+  details?: string;
+};
+
+function toErrorDetails(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return 'Unknown internal error.';
+}
+
 function parsePayload(input: unknown): JobCreatePayload {
   if (!input || typeof input !== 'object') {
     throw new PayloadValidationError('Payload must be an object.');
@@ -94,6 +107,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ error: 'Unable to create job.' }, { status: 500 });
+    const details = toErrorDetails(error);
+    console.error('POST /api/jobs failed.', error);
+
+    const payload: CreateJobErrorResponse = {
+      error: 'Unable to create job.',
+      code: 'JOB_CREATE_FAILED',
+      details
+    };
+
+    return NextResponse.json(payload, { status: 500 });
   }
 }

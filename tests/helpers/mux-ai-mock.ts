@@ -2,7 +2,7 @@ import { withEnv } from './temp-env';
 
 type MuxAiModule = typeof import('../../src/services/mux-ai');
 
-type MuxModuleName = '@mux/ai/workflows' | '@mux/ai/primitives';
+type MuxModuleName = '@mux/ai/workflows' | '@mux/ai/primitives' | '@mux/ai';
 
 export function createMockMuxImporter() {
   return async (moduleName: MuxModuleName): Promise<Record<string, unknown>> => {
@@ -30,7 +30,7 @@ export function createMockMuxImporter() {
       };
     }
 
-    return {
+    const workflows = {
       async transcribe(muxAssetId: string) {
         return {
           language: 'en',
@@ -60,6 +60,14 @@ export function createMockMuxImporter() {
         };
       }
     };
+
+    if (moduleName === '@mux/ai') {
+      return {
+        workflows
+      };
+    }
+
+    return workflows;
   };
 }
 

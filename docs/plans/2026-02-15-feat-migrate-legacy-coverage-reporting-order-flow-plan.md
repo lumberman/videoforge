@@ -39,7 +39,7 @@ Using brainstorm: `/videoforge/docs/brainstorms/2026-02-15-legacy-frontend-migra
 
 Confirmed decisions from brainstorm:
 - route-isolated migration under current app
-- gateway-first external data source (`NEXT_PUBLIC_GATEWAY_URL`, fallback `NEXT_STAGE_GATEWAY_URL`)
+- gateway-first external data source (`CORE_API_ENDPOINT`, fallback `NEXT_STAGE_GATEWAY_URL`)
 - `muxAssetId` derived from selected media items
 - multi-select submit creates one job per selected media item immediately
 
@@ -88,7 +88,7 @@ Reason: this migration introduces new dynamic route handlers and async selection
 
 ### User Flow Overview
 1. Operator opens coverage route.
-2. App fetches language and media coverage data from gateway (`NEXT_PUBLIC_GATEWAY_URL` or `NEXT_STAGE_GATEWAY_URL`).
+2. App fetches language and media coverage data from gateway (`CORE_API_ENDPOINT` or `NEXT_STAGE_GATEWAY_URL`).
 3. Operator filters by report type, geo/language, and coverage status.
 4. Operator selects media items for translation/order.
 5. Submit triggers one `POST /api/jobs` per selected item using extracted `muxAssetId`.
@@ -161,10 +161,10 @@ Research insights:
 
 ### Phase 2: Gateway Data Adapters and Env Contract
 - [x] Extend env accessor layer with deterministic gateway precedence:
-  - `NEXT_PUBLIC_GATEWAY_URL`
+  - `CORE_API_ENDPOINT`
   - fallback `NEXT_STAGE_GATEWAY_URL`
   - optional watch URL accessor if needed
-  (`/videoforge/src/config/env.ts`, `/videoforge/.env.example`, `/videoforge/README.md`)
+ (`/videoforge/src/config/env.ts`, `/videoforge/.env.example`, `/videoforge/README.md`)
 - [x] Port legacy language/media fetch logic into adapter-style modules:
   - e.g. `/videoforge/src/services/coverage-gateway.ts`
 - [x] Add route handlers that proxy/normalize gateway data for UI usage:
@@ -182,7 +182,7 @@ Research insights:
   - Keep route intent explicit with `export const dynamic = 'force-dynamic'` on coverage proxy routes.
 - Add strict response validation for gateway payloads before mapping into UI DTOs.
 - Keep env precedence deterministic:
-  - primary: `NEXT_PUBLIC_GATEWAY_URL`
+  - primary: `CORE_API_ENDPOINT`
   - fallback: `NEXT_STAGE_GATEWAY_URL`
   - if both missing: return structured API error with clear operator guidance.
 
@@ -192,7 +192,7 @@ Implementation detail (pseudo-code):
 type GatewayConfig = { baseUrl: string };
 
 export function resolveGatewayBaseUrl(): GatewayConfig | null {
-  const primary = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
+  const primary = process.env.CORE_API_ENDPOINT?.trim();
   const fallback = process.env.NEXT_STAGE_GATEWAY_URL?.trim();
   const baseUrl = primary || fallback;
   return baseUrl ? { baseUrl } : null;
@@ -312,7 +312,7 @@ Research insights:
 
 ### Functional Requirements
 - [x] Coverage route exists and is reachable from dashboard nav.
-- [x] Coverage data and language metadata are fetched from gateway using env precedence (`NEXT_PUBLIC_GATEWAY_URL` -> `NEXT_STAGE_GATEWAY_URL`).
+- [x] Coverage data and language metadata are fetched from gateway using env precedence (`CORE_API_ENDPOINT` -> `NEXT_STAGE_GATEWAY_URL`).
 - [x] Operators can filter and select media items by coverage/report criteria.
 - [x] Submit creates one job per selected media item using extracted `muxAssetId`.
 - [x] Batch submit summary clearly reports created, failed, and skipped items with reasons.
@@ -332,7 +332,7 @@ Research insights:
 
 ### Test Matrix (Deepened)
 - [x] `coverage API route` returns explicit error when both gateway env vars are missing.
-- [x] `coverage API route` uses precedence (`NEXT_PUBLIC_GATEWAY_URL` then `NEXT_STAGE_GATEWAY_URL`).
+- [x] `coverage API route` uses precedence (`CORE_API_ENDPOINT` then `NEXT_STAGE_GATEWAY_URL`).
 - [x] `coverage mapping` marks media items missing `muxAssetId` as non-submittable with reason.
 - [x] `coverage submit` locks button during in-flight requests and blocks duplicate submit.
 - [x] `coverage submit` returns stable ordered summary for sequential mixed outcomes.
