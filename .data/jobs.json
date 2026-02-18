@@ -891,6 +891,841 @@
       "currentStep": "transcription",
       "startedAt": "2026-02-17T15:19:26.713Z",
       "completedAt": "2026-02-17T15:19:27.551Z"
+    },
+    {
+      "id": "job_58c01c0563e746c5bbf0",
+      "muxAssetId": "1FWAKaJ5ZPhGnHrImpnEoHKF8jHNjDKLj89gKK6pPYY",
+      "languages": [
+        "3934"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T18:01:14.217Z",
+      "updatedAt": "2026-02-17T18:01:14.841Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T18:01:14.223Z",
+          "finishedAt": "2026-02-17T18:01:14.224Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T18:01:14.225Z",
+          "finishedAt": "2026-02-17T18:01:14.839Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:01:14.582Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:01:14.718Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:01:14.839Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T18:01:14.222Z",
+      "completedAt": "2026-02-17T18:01:14.841Z"
+    },
+    {
+      "id": "job_665e28234b62458791b7",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T18:08:04.736Z",
+      "updatedAt": "2026-02-17T18:08:05.246Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T18:08:04.746Z",
+          "finishedAt": "2026-02-17T18:08:04.746Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T18:08:04.747Z",
+          "finishedAt": "2026-02-17T18:08:05.244Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:08:05.031Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:08:05.140Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:08:05.244Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T18:08:04.745Z",
+      "completedAt": "2026-02-17T18:08:05.246Z"
+    },
+    {
+      "id": "job_82fbc0fd79dd49e793f1",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529",
+        "21028"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T18:58:23.370Z",
+      "updatedAt": "2026-02-17T18:58:24.131Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T18:58:23.378Z",
+          "finishedAt": "2026-02-17T18:58:23.379Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T18:58:23.380Z",
+          "finishedAt": "2026-02-17T18:58:24.123Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:58:23.793Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:58:23.908Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception",
+          "at": "2026-02-17T18:58:24.123Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T18:58:23.377Z",
+      "completedAt": "2026-02-17T18:58:24.131Z"
+    },
+    {
+      "id": "job_cb067118450946738593",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529",
+        "21028"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T19:41:13.177Z",
+      "updatedAt": "2026-02-17T19:41:14.459Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T19:41:13.313Z",
+          "finishedAt": "2026-02-17T19:41:13.316Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T19:41:13.320Z",
+          "finishedAt": "2026-02-17T19:41:14.455Z",
+          "error": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module",
+          "at": "2026-02-17T19:41:14.455Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T19:41:13.192Z",
+      "completedAt": "2026-02-17T19:41:14.459Z"
+    },
+    {
+      "id": "job_1352152c78754714b5e8",
+      "muxAssetId": "1FWAKaJ5ZPhGnHrImpnEoHKF8jHNjDKLj89gKK6pPYY",
+      "languages": [
+        "3934"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 0,
+      "createdAt": "2026-02-17T21:21:22.250Z",
+      "updatedAt": "2026-02-17T21:21:22.940Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T21:21:22.263Z",
+          "finishedAt": "2026-02-17T21:21:22.264Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 0,
+          "startedAt": "2026-02-17T21:21:22.265Z",
+          "finishedAt": "2026-02-17T21:21:22.859Z",
+          "error": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI workflow transcription failed: none of [transcribe, transcriptionWorkflow, runTranscriptionWorkflow] are exported by the module",
+          "at": "2026-02-17T21:21:22.859Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T21:21:22.262Z",
+      "completedAt": "2026-02-17T21:21:22.940Z"
+    },
+    {
+      "id": "job_54e9364b161e457c85bb",
+      "muxAssetId": "gLWZKC2WI200oKWOWZ9cvfYpviOE7Df4i4c8prHyD3EA",
+      "languages": [
+        "529",
+        "21028"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-17T21:23:52.963Z",
+      "updatedAt": "2026-02-17T21:23:54.581Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-17T21:23:53.010Z",
+          "finishedAt": "2026-02-17T21:23:53.029Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-17T21:23:53.037Z",
+          "finishedAt": "2026-02-17T21:23:54.579Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-17T21:23:53.945Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-17T21:23:54.350Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-17T21:23:54.579Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-17T21:23:52.970Z",
+      "completedAt": "2026-02-17T21:23:54.581Z"
+    },
+    {
+      "id": "job_57577ac1b4824695a774",
+      "muxAssetId": "1FWAKaJ5ZPhGnHrImpnEoHKF8jHNjDKLj89gKK6pPYY",
+      "languages": [
+        "3934"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-18T01:30:07.520Z",
+      "updatedAt": "2026-02-18T01:30:08.567Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T01:30:07.528Z",
+          "finishedAt": "2026-02-18T01:30:07.529Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-18T01:30:07.530Z",
+          "finishedAt": "2026-02-18T01:30:08.564Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:30:08.224Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:30:08.447Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:30:08.564Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-18T01:30:07.526Z",
+      "completedAt": "2026-02-18T01:30:08.567Z"
+    },
+    {
+      "id": "job_b868a825bf3340fcb3e9",
+      "muxAssetId": "QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+      "languages": [
+        "496"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-18T01:32:51.108Z",
+      "updatedAt": "2026-02-18T01:32:52.026Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T01:32:51.114Z",
+          "finishedAt": "2026-02-18T01:32:51.116Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-18T01:32:51.116Z",
+          "finishedAt": "2026-02-18T01:32:52.024Z",
+          "error": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:32:51.781Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:32:51.905Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI primitives transcription failed: fetchTranscriptForAsset threw an exception: No transcript track found. Available languages: none",
+          "at": "2026-02-18T01:32:52.024Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-18T01:32:51.113Z",
+      "completedAt": "2026-02-18T01:32:52.026Z"
     }
   ]
 }
