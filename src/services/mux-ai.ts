@@ -89,6 +89,18 @@ function readEnvTrimmed(key: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function readEnvPositiveInt(key: string): number | undefined {
+  const raw = readEnvTrimmed(key);
+  if (!raw) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+  return parsed;
+}
+
 function hasMuxAiRuntimeCredentials(): boolean {
   const workflowKey = readEnvTrimmed('MUX_AI_WORKFLOW_SECRET_KEY');
   const tokenId = readEnvTrimmed('MUX_TOKEN_ID');
@@ -425,7 +437,13 @@ function toPreprocessWarning(error: MuxAiError): MuxAiPreprocessWarning {
 
 type MuxAssetRecord = {
   playback_ids?: Array<{ id?: string; policy?: string }>;
-  tracks?: Array<{ id?: string; type?: string; language_code?: string; status?: string }>;
+  tracks?: Array<{
+    id?: string;
+    type?: string;
+    language_code?: string;
+    status?: string;
+    name?: string;
+  }>;
 };
 
 type PrimitiveTranscriptFetchResult = {
@@ -613,6 +631,111 @@ function computeTranscriptDuration(text: string): number {
   return Math.max(1, Math.ceil(words / 2));
 }
 
+type MuxTextTrackStatus = 'ready' | 'preparing' | 'errored';
+
+const DEFAULT_SUBTITLE_POLL_INTERVAL_MS = 2_000;
+const DEFAULT_SUBTITLE_POLL_MAX_ATTEMPTS = 30;
+
+function getSubtitlePollIntervalMs(): number {
+  return readEnvPositiveInt('MUX_SUBTITLE_POLL_INTERVAL_MS') ?? DEFAULT_SUBTITLE_POLL_INTERVAL_MS;
+}
+
+function getSubtitlePollMaxAttempts(): number {
+  return (
+    readEnvPositiveInt('MUX_SUBTITLE_POLL_MAX_ATTEMPTS') ?? DEFAULT_SUBTITLE_POLL_MAX_ATTEMPTS
+  );
+}
+
+function toTrackStatus(value: string | undefined): MuxTextTrackStatus | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'ready' || normalized === 'preparing' || normalized === 'errored') {
+    return normalized;
+  }
+  return null;
+}
+
+function languageMatches(trackLanguage: string | undefined, preferredLanguage: string | null): boolean {
+  if (!preferredLanguage) {
+    return true;
+  }
+  const normalizedTrackLanguage = normalizeLanguageCode(trackLanguage ?? '');
+  return normalizedTrackLanguage === preferredLanguage;
+}
+
+function findTextTrackByStatus(
+  asset: MuxAssetRecord,
+  status: MuxTextTrackStatus,
+  preferredLanguage: string | null
+): { id: string; language_code?: string; status?: string } | null {
+  for (const rawTrack of asset.tracks ?? []) {
+    if (!rawTrack || typeof rawTrack !== 'object') {
+      continue;
+    }
+    if (rawTrack.type !== 'text') {
+      continue;
+    }
+    if (toTrackStatus(rawTrack.status) !== status) {
+      continue;
+    }
+    if (!languageMatches(rawTrack.language_code, preferredLanguage)) {
+      continue;
+    }
+    const id = typeof rawTrack.id === 'string' ? rawTrack.id.trim() : '';
+    if (!id) {
+      continue;
+    }
+    return {
+      id,
+      language_code: rawTrack.language_code,
+      status: rawTrack.status
+    };
+  }
+  return null;
+}
+
+function selectAudioTrackForSubtitleGeneration(asset: MuxAssetRecord): { id: string } | null {
+  let firstAudioTrackId: string | null = null;
+  for (const rawTrack of asset.tracks ?? []) {
+    if (!rawTrack || typeof rawTrack !== 'object') {
+      continue;
+    }
+    if (rawTrack.type !== 'audio') {
+      continue;
+    }
+    const id = typeof rawTrack.id === 'string' ? rawTrack.id.trim() : '';
+    if (!id) {
+      continue;
+    }
+    if (!firstAudioTrackId) {
+      firstAudioTrackId = id;
+    }
+    if (toTrackStatus(rawTrack.status) === 'ready') {
+      return { id };
+    }
+  }
+  if (!firstAudioTrackId) {
+    return null;
+  }
+  return { id: firstAudioTrackId };
+}
+
+function isMissingTranscriptTrackErrorMessage(message: string): boolean {
+  return (
+    /no transcript track found/i.test(message) ||
+    /no caption track found/i.test(message) ||
+    /available languages:\s*none/i.test(message)
+  );
+}
+
+function sleepMs(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 function getTranscriptLanguageFromAsset(asset: MuxAssetRecord): string | null {
   for (const rawTrack of asset.tracks ?? []) {
     if (!rawTrack || typeof rawTrack !== 'object') {
@@ -714,6 +837,92 @@ async function fetchMuxAsset(muxAssetId: string): Promise<MuxAssetRecord> {
     throw toInvalidResponse('asset lookup');
   }
   return data as MuxAssetRecord;
+}
+
+async function requestMuxGeneratedSubtitles(
+  muxAssetId: string,
+  audioTrackId: string,
+  languageCode?: string
+): Promise<void> {
+  const { tokenId, tokenSecret } = readMuxApiCredentials();
+  const auth = Buffer.from(`${tokenId}:${tokenSecret}`).toString('base64');
+
+  const response = await fetch(
+    `https://api.mux.com/video/v1/assets/${encodeURIComponent(muxAssetId)}/tracks/${encodeURIComponent(audioTrackId)}/generate-subtitles`,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Basic ${auth}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(languageCode ? { language_code: languageCode } : {})
+    }
+  );
+
+  if (!response.ok) {
+    throw toOperationFailed(
+      'subtitle generation request',
+      `Mux API returned HTTP ${response.status} while generating subtitles for asset ${muxAssetId}`
+    );
+  }
+}
+
+async function waitForMuxTextTrackReady(
+  muxAssetId: string,
+  preferredLanguage: string | null
+): Promise<MuxAssetRecord> {
+  const maxAttempts = getSubtitlePollMaxAttempts();
+  const intervalMs = getSubtitlePollIntervalMs();
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const asset = await fetchMuxAsset(muxAssetId);
+    const readyTrack = findTextTrackByStatus(asset, 'ready', preferredLanguage);
+    if (readyTrack) {
+      return asset;
+    }
+
+    const erroredTrack = findTextTrackByStatus(asset, 'errored', preferredLanguage);
+    if (erroredTrack) {
+      throw toOperationFailed(
+        'subtitle generation poll',
+        `Mux text track ${erroredTrack.id} failed while generating subtitles for asset ${muxAssetId}`
+      );
+    }
+
+    if (attempt < maxAttempts) {
+      await sleepMs(intervalMs);
+    }
+  }
+
+  throw toOperationFailed(
+    'subtitle generation poll',
+    `Timed out waiting for generated subtitles on asset ${muxAssetId} after ${maxAttempts} attempts`
+  );
+}
+
+async function ensureTranscriptTrackAvailable(
+  muxAssetId: string,
+  asset: MuxAssetRecord,
+  preferredLanguage: string | null
+): Promise<MuxAssetRecord> {
+  const readyTrack = findTextTrackByStatus(asset, 'ready', preferredLanguage);
+  if (readyTrack) {
+    return asset;
+  }
+
+  const preparingTrack = findTextTrackByStatus(asset, 'preparing', preferredLanguage);
+  if (!preparingTrack) {
+    const audioTrack = selectAudioTrackForSubtitleGeneration(asset);
+    if (!audioTrack) {
+      throw toOperationFailed(
+        'subtitle generation request',
+        `Mux asset ${muxAssetId} has no eligible audio track for subtitle generation`
+      );
+    }
+    await requestMuxGeneratedSubtitles(muxAssetId, audioTrack.id, preferredLanguage ?? undefined);
+  }
+
+  return waitForMuxTextTrackReady(muxAssetId, preferredLanguage);
 }
 
 function mapWorkflowChapters(result: WorkflowChaptersResult, transcript: Transcript): Chapter[] {
@@ -854,8 +1063,8 @@ async function transcribeWithPrimitiveFetch(
     return undefined;
   }
 
-  const asset = await fetchMuxAsset(muxAssetId);
-  const playbackId = getPlaybackIdFromAsset(asset);
+  let asset = await fetchMuxAsset(muxAssetId);
+  let playbackId = getPlaybackIdFromAsset(asset);
   if (!playbackId) {
     throw toOperationFailed(
       'primitives transcription',
@@ -868,13 +1077,36 @@ async function transcribeWithPrimitiveFetch(
     transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, { required: true });
   } catch (error) {
     const causeMessage = getImportFailureMessage(error);
-    throw toOperationFailed(
-      'primitives transcription',
-      causeMessage
-        ? `fetchTranscriptForAsset threw an exception: ${causeMessage}`
-        : 'fetchTranscriptForAsset threw an exception',
-      error
-    );
+    const isMissingTrack = causeMessage
+      ? isMissingTranscriptTrackErrorMessage(causeMessage)
+      : false;
+    if (!isMissingTrack) {
+      throw toOperationFailed(
+        'primitives transcription',
+        causeMessage
+          ? `fetchTranscriptForAsset threw an exception: ${causeMessage}`
+          : 'fetchTranscriptForAsset threw an exception',
+        error
+      );
+    }
+
+    try {
+      asset = await ensureTranscriptTrackAvailable(muxAssetId, asset, null);
+      playbackId = getPlaybackIdFromAsset(asset) ?? playbackId;
+      transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, { required: true });
+    } catch (recoveryError) {
+      if (isMuxAiError(recoveryError)) {
+        throw recoveryError;
+      }
+      const recoveryMessage = getImportFailureMessage(recoveryError);
+      throw toOperationFailed(
+        'primitives transcription',
+        recoveryMessage
+          ? `fetchTranscriptForAsset threw an exception: ${recoveryMessage}`
+          : 'fetchTranscriptForAsset threw an exception',
+        recoveryError
+      );
+    }
   }
 
   if (!isPrimitiveTranscriptFetchResult(transcriptResponse)) {
