@@ -416,20 +416,23 @@ test('mux adapter silently falls back to workflow when legacy primitives transcr
   );
 });
 
-test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', async () => {
+test('mux adapter requests subtitle generation and retries primitive transcript fetch when track is missing', async () => {
   await withEnv(
     {
       MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
       MUX_TOKEN_ID: 'mux-token-id',
-      MUX_TOKEN_SECRET: 'mux-token-secret'
+      MUX_TOKEN_SECRET: 'mux-token-secret',
+      MUX_SUBTITLE_POLL_INTERVAL_MS: '1',
+      MUX_SUBTITLE_POLL_MAX_ATTEMPTS: '3'
     },
     async () => {
       const muxAiModule = await import('../src/services/mux-ai');
       const originalFetch = globalThis.fetch;
-      const warnings: string[] = [];
-      const originalWarn = console.warn;
+      let assetFetchCount = 0;
+      let generateRequestCount = 0;
+      let transcriptFetchCount = 0;
 
-      globalThis.fetch = async (input) => {
+      globalThis.fetch = async (input, init) => {
         const url =
           typeof input === 'string'
             ? input
@@ -437,11 +440,46 @@ test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', a
               ? input.toString()
               : String(input.url);
 
+        if (url.includes('/generate-subtitles')) {
+          generateRequestCount += 1;
+          const body = typeof init?.body === 'string' ? init.body : '';
+          assert.equal(body.length > 0, true);
+          const parsed = JSON.parse(body) as {
+            generated_subtitles?: Array<{ language_code?: string }>;
+          };
+          assert.equal(Array.isArray(parsed.generated_subtitles), true);
+          assert.equal(parsed.generated_subtitles?.[0]?.language_code, 'auto');
+          return new Response(JSON.stringify({ data: { id: 'generated' } }), {
+            status: 201,
+            headers: { 'content-type': 'application/json' }
+          });
+        }
+
         if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          assetFetchCount += 1;
+          if (assetFetchCount === 1) {
+            return new Response(
+              JSON.stringify({
+                data: {
+                  playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                  tracks: [{ id: 'audio-track-1', type: 'audio', status: 'ready' }]
+                }
+              }),
+              {
+                status: 200,
+                headers: { 'content-type': 'application/json' }
+              }
+            );
+          }
+
           return new Response(
             JSON.stringify({
               data: {
-                playback_ids: [{ id: 'public-playback-id', policy: 'public' }]
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [
+                  { id: 'audio-track-1', type: 'audio', status: 'ready' },
+                  { id: 'text-track-1', type: 'text', status: 'ready', language_code: 'en' }
+                ]
               }
             }),
             {
@@ -454,15 +492,18 @@ test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', a
         throw new Error(`Unexpected fetch call in test: ${url}`);
       };
 
-      console.warn = (...args: unknown[]) => {
-        warnings.push(args.map((value) => String(value)).join(' '));
-      };
-
       muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
         if (moduleName === '@mux/ai/primitives') {
           return {
             async fetchTranscriptForAsset() {
-              throw new Error('No transcript track found for playback id');
+              transcriptFetchCount += 1;
+              if (transcriptFetchCount === 1) {
+                throw new Error('No transcript track found for playback id');
+              }
+              return {
+                transcriptText: 'primitive recovered transcript',
+                track: { language_code: 'en' }
+              };
             }
           };
         }
@@ -482,25 +523,92 @@ test('mux adapter falls back to workflow when fetchTranscriptForAsset throws', a
         const transcript = await muxAiModule.transcribeWithMuxAi(
           'mux-asset-fetch-fallback'
         );
-        assert.equal(transcript.text, 'workflow fallback transcript');
-        assert.equal(
-          warnings.some(
-            (line) =>
-              line.includes('operation="primitives transcription fetch"') &&
-              line.includes('No transcript track found for playback id')
-          ),
-          true
-        );
+        assert.equal(transcript.text, 'primitive recovered transcript');
+        assert.equal(generateRequestCount, 1);
+        assert.equal(transcriptFetchCount, 2);
       } finally {
         globalThis.fetch = originalFetch;
-        console.warn = originalWarn;
         muxAiModule.setMuxAiModuleImporterForTests();
       }
     }
   );
 });
 
-test('mux adapter preserves primitives fetch failure when workflows exports have no transcription function', async () => {
+test('mux adapter includes mux API error details for subtitle generation HTTP failures', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('/generate-subtitles')) {
+          return new Response(JSON.stringify({ error: { message: 'track is not eligible for subtitles' } }), {
+            status: 400,
+            headers: { 'content-type': 'application/json' }
+          });
+        }
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [{ id: 'audio-track-1', type: 'audio', status: 'ready' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              throw new Error('No transcript track found for playback id');
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-subtitle-http-400'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
+            assert.match(error.message, /HTTP 400/i);
+            assert.match(error.message, /track is not eligible for subtitles/i);
+            return true;
+          }
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter fails deterministically when transcript is missing and asset has no audio track', async () => {
   await withEnv(
     {
       MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
@@ -523,7 +631,8 @@ test('mux adapter preserves primitives fetch failure when workflows exports have
           return new Response(
             JSON.stringify({
               data: {
-                playback_ids: [{ id: 'public-playback-id', policy: 'public' }]
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: []
               }
             }),
             {
@@ -560,12 +669,122 @@ test('mux adapter preserves primitives fetch failure when workflows exports have
           (error) => {
             assert.ok(muxAiModule.isMuxAiError(error));
             assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
-            assert.match(error.message, /fetchTranscriptForAsset threw an exception/i);
-            assert.match(error.message, /No transcript track found for playback id/i);
-            assert.doesNotMatch(error.message, /none of \[transcribe/i);
+            assert.match(error.message, /no eligible audio track/i);
             return true;
           }
         );
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter polls existing preparing text track without requesting subtitle generation', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret',
+      MUX_SUBTITLE_POLL_INTERVAL_MS: '1',
+      MUX_SUBTITLE_POLL_MAX_ATTEMPTS: '3'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+      let assetFetchCount = 0;
+      let generateRequestCount = 0;
+      let transcriptFetchCount = 0;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('/generate-subtitles')) {
+          generateRequestCount += 1;
+          return new Response(JSON.stringify({ data: { id: 'generated' } }), {
+            status: 201,
+            headers: { 'content-type': 'application/json' }
+          });
+        }
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          assetFetchCount += 1;
+          if (assetFetchCount === 1) {
+            return new Response(
+              JSON.stringify({
+                data: {
+                  playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                  tracks: [
+                    { id: 'audio-track-1', type: 'audio', status: 'ready' },
+                    { id: 'text-track-1', type: 'text', status: 'preparing', language_code: 'en' }
+                  ]
+                }
+              }),
+              {
+                status: 200,
+                headers: { 'content-type': 'application/json' }
+              }
+            );
+          }
+
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [
+                  { id: 'audio-track-1', type: 'audio', status: 'ready' },
+                  { id: 'text-track-1', type: 'text', status: 'ready', language_code: 'en' }
+                ]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              transcriptFetchCount += 1;
+              if (transcriptFetchCount === 1) {
+                throw new Error('No transcript track found for playback id');
+              }
+              return {
+                transcriptText: 'polled transcript',
+                track: { language_code: 'en' }
+              };
+            }
+          };
+        }
+
+        return {
+          async transcribe() {
+            return {
+              language: 'en',
+              text: 'workflow fallback transcript',
+              segments: [{ startSec: 0, endSec: 1, text: 'workflow fallback transcript' }]
+            };
+          }
+        };
+      });
+
+      try {
+        const transcript = await muxAiModule.transcribeWithMuxAi('mux-asset-preparing-track');
+        assert.equal(transcript.text, 'polled transcript');
+        assert.equal(generateRequestCount, 0);
+        assert.equal(transcriptFetchCount, 2);
       } finally {
         globalThis.fetch = originalFetch;
         muxAiModule.setMuxAiModuleImporterForTests();

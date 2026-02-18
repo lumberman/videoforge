@@ -1,7 +1,7 @@
 ---
 title: "fix: Generate Mux subtitles when transcript track is missing"
 type: "fix"
-status: "active"
+status: "completed"
 date: "2026-02-18"
 ---
 
@@ -218,12 +218,12 @@ Tasks:
 
 ## Acceptance Criteria
 
-- [ ] Jobs no longer fail immediately on missing transcript track when Mux can generate subtitles for the asset.
-- [ ] Adapter requests subtitle generation through Mux API and retries transcript fetch after track readiness.
-- [ ] Failures are deterministic and actionable when generation cannot proceed (no audio track, timeout, API error).
-- [ ] Existing happy path (ready text track already present) remains fast and unchanged.
-- [ ] Automated tests cover success and failure branches for the new recovery logic.
-- [ ] Job error payload continues exposing structured `code` and `operatorHint` on failure.
+- [x] Jobs no longer fail immediately on missing transcript track when Mux can generate subtitles for the asset.
+- [x] Adapter requests subtitle generation through Mux API and retries transcript fetch after track readiness.
+- [x] Failures are deterministic and actionable when generation cannot proceed (no audio track, timeout, API error).
+- [x] Existing happy path (ready text track already present) remains fast and unchanged.
+- [x] Automated tests cover success and failure branches for the new recovery logic.
+- [x] Job error payload continues exposing structured `code` and `operatorHint` on failure.
 
 ## Success Metrics
 
