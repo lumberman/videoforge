@@ -432,7 +432,7 @@ test('mux adapter requests subtitle generation and retries primitive transcript 
       let generateRequestCount = 0;
       let transcriptFetchCount = 0;
 
-      globalThis.fetch = async (input) => {
+      globalThis.fetch = async (input, init) => {
         const url =
           typeof input === 'string'
             ? input
@@ -442,6 +442,13 @@ test('mux adapter requests subtitle generation and retries primitive transcript 
 
         if (url.includes('/generate-subtitles')) {
           generateRequestCount += 1;
+          const body = typeof init?.body === 'string' ? init.body : '';
+          assert.equal(body.length > 0, true);
+          const parsed = JSON.parse(body) as {
+            generated_subtitles?: Array<{ language_code?: string }>;
+          };
+          assert.equal(Array.isArray(parsed.generated_subtitles), true);
+          assert.equal(parsed.generated_subtitles?.[0]?.language_code, 'auto');
           return new Response(JSON.stringify({ data: { id: 'generated' } }), {
             status: 201,
             headers: { 'content-type': 'application/json' }
@@ -519,6 +526,80 @@ test('mux adapter requests subtitle generation and retries primitive transcript 
         assert.equal(transcript.text, 'primitive recovered transcript');
         assert.equal(generateRequestCount, 1);
         assert.equal(transcriptFetchCount, 2);
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter includes mux API error details for subtitle generation HTTP failures', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('/generate-subtitles')) {
+          return new Response(JSON.stringify({ error: { message: 'track is not eligible for subtitles' } }), {
+            status: 400,
+            headers: { 'content-type': 'application/json' }
+          });
+        }
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [{ id: 'audio-track-1', type: 'audio', status: 'ready' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              throw new Error('No transcript track found for playback id');
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-subtitle-http-400'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
+            assert.match(error.message, /HTTP 400/i);
+            assert.match(error.message, /track is not eligible for subtitles/i);
+            return true;
+          }
+        );
       } finally {
         globalThis.fetch = originalFetch;
         muxAiModule.setMuxAiModuleImporterForTests();

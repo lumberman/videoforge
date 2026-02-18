@@ -844,6 +844,7 @@ async function requestMuxGeneratedSubtitles(
   audioTrackId: string,
   languageCode?: string
 ): Promise<void> {
+  const normalizedLanguageCode = normalizeLanguageCode(languageCode ?? '') ?? 'auto';
   const { tokenId, tokenSecret } = readMuxApiCredentials();
   const auth = Buffer.from(`${tokenId}:${tokenSecret}`).toString('base64');
 
@@ -855,14 +856,42 @@ async function requestMuxGeneratedSubtitles(
         authorization: `Basic ${auth}`,
         'content-type': 'application/json'
       },
-      body: JSON.stringify(languageCode ? { language_code: languageCode } : {})
+      body: JSON.stringify({
+        generated_subtitles: [
+          {
+            language_code: normalizedLanguageCode
+          }
+        ]
+      })
     }
   );
 
   if (!response.ok) {
+    let responseDetails = '';
+    try {
+      const raw = await response.text();
+      if (raw.trim().length > 0) {
+        try {
+          const parsed = JSON.parse(raw) as unknown;
+          const root = asRecord(parsed);
+          const error = asRecord(root?.error);
+          const directMessage =
+            (typeof error?.message === 'string' ? error.message : null) ??
+            (typeof root?.message === 'string' ? root.message : null);
+          responseDetails = directMessage?.trim() ?? raw.trim();
+        } catch {
+          responseDetails = raw.trim();
+        }
+      }
+    } catch {
+      responseDetails = '';
+    }
+
     throw toOperationFailed(
       'subtitle generation request',
-      `Mux API returned HTTP ${response.status} while generating subtitles for asset ${muxAssetId}`
+      responseDetails
+        ? `Mux API returned HTTP ${response.status} while generating subtitles for asset ${muxAssetId}: ${responseDetails}`
+        : `Mux API returned HTTP ${response.status} while generating subtitles for asset ${muxAssetId}`
     );
   }
 }
