@@ -2576,6 +2576,12 @@ html[data-coverage-loading="true"] .collections::after {
     font-size: 1.6rem;
   }
 
+  .collection-stats {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+  }
+
   .qa-debug-modal-backdrop {
     padding: 12px;
   }
