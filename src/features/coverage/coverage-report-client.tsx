@@ -153,6 +153,24 @@ type VideoJobDebugPayload = {
   }
 }
 
+function toLanguageAbbreviation(label: string, fallbackId: string): string {
+  const normalized = label.trim();
+  if (!normalized) return fallbackId.toUpperCase().slice(0, 4);
+
+  const words = normalized
+    .replace(/[()[\],]/g, ' ')
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (words.length === 0) return fallbackId.toUpperCase().slice(0, 4);
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words
+    .slice(0, 3)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 type CoverageJobsQueueRedirectInput = {
   submitState: SubmitState
   hasRedirected: boolean
@@ -1610,6 +1628,7 @@ export function CoverageReportClient({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>({ type: 'idle' });
   const [videoQaDebugState, setVideoQaDebugState] = useState<VideoQaDebugState | null>(null)
+  const [queueJobsCount, setQueueJobsCount] = useState<number | null>(null)
   const loadMoreTimeoutRef = useRef<number | null>(null)
   const hasQueuedJobsRedirectRef = useRef(false)
 
@@ -1632,6 +1651,40 @@ export function CoverageReportClient({
       if (loadMoreTimeoutRef.current) {
         window.clearTimeout(loadMoreTimeoutRef.current)
       }
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadQueueJobsCount() {
+      try {
+        const response = await fetch('/api/jobs', { cache: 'no-store' })
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as Array<{ status?: string }>
+        const currentCount = Array.isArray(payload)
+          ? payload.length
+          : 0
+
+        if (!cancelled) {
+          setQueueJobsCount(currentCount)
+        }
+      } catch {
+        if (!cancelled) {
+          setQueueJobsCount(null)
+        }
+      }
+    }
+
+    void loadQueueJobsCount()
+    const intervalId = window.setInterval(loadQueueJobsCount, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
     }
   }, [])
 
@@ -1667,6 +1720,14 @@ export function CoverageReportClient({
     selectedLabels.length === 0
       ? [languageOptions[0]?.englishLabel ?? 'Unknown']
       : selectedLabels
+
+  const languageAbbreviationsById = useMemo<Record<string, string>>(() => {
+    const entries = languageOptions.map((option) => [
+      option.id,
+      toLanguageAbbreviation(option.englishLabel, option.id)
+    ]);
+    return Object.fromEntries(entries);
+  }, [languageOptions]);
   const selectedVideosForEstimate = useMemo(
     () =>
       getSelectedVideosInOrder(collections, selectedSet).filter(
@@ -1844,14 +1905,24 @@ export function CoverageReportClient({
     hasQueuedJobsRedirectRef.current = false
     setSubmitState({ type: 'submitting' });
 
-    const selectedVideos = getSelectedVideosInOrder(
-      collections,
-      new Set(selectedIds)
+    const collectionTitleByVideoId = new Map<string, string>();
+    for (const collection of collections) {
+      for (const video of collection.videos) {
+        collectionTitleByVideoId.set(video.id, collection.title);
+      }
+    }
+
+    const selectedVideos = getSelectedVideosInOrder(collections, new Set(selectedIds)).map(
+      (video) => ({
+        ...video,
+        collectionTitle: collectionTitleByVideoId.get(video.id) ?? null
+      })
     );
 
     const result = await submitCoverageSelection({
       selectedVideos,
       languageIds: selectedLanguageIds,
+      languageAbbreviationsById,
       options: {
         generateVoiceover: false,
         uploadMux: false,
@@ -1866,6 +1937,9 @@ export function CoverageReportClient({
           body: JSON.stringify({
             muxAssetId: input.muxAssetId,
             languages: input.languages,
+            sourceCollectionTitle: input.sourceCollectionTitle,
+            sourceMediaTitle: input.sourceMediaTitle,
+            requestedLanguageAbbreviations: input.requestedLanguageAbbreviations,
             options: input.options
           })
         });
@@ -1892,7 +1966,7 @@ export function CoverageReportClient({
         .filter((item) => item.status !== 'created')
         .map((item) => item.mediaId)
     );
-  }, [collections, selectedIds, selectedLanguageIds, submitState.type])
+  }, [collections, languageAbbreviationsById, selectedIds, selectedLanguageIds, submitState.type])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1984,11 +2058,13 @@ export function CoverageReportClient({
     <div className="report-shell">
       <header className="report-header">
         <div className="header-brand">
-          <img
-            src="/jesusfilm-sign.svg"
-            alt="Jesus Film Project"
-            className="header-logo"
-          />
+          <Link href="/dashboard/coverage" aria-label="Go to coverage report">
+            <img
+              src="/jesusfilm-sign.svg"
+              alt="Jesus Film Project"
+              className="header-logo"
+            />
+          </Link>
         </div>
         <div className="header-content">
           <div className="header-selectors">
@@ -2001,9 +2077,36 @@ export function CoverageReportClient({
           </div>
         </div>
         <div className="header-diagram">
-          <div className="header-diagram-menu">
-            <Link href="/jobs" className="control-value header-menu-link">
-              Queue
+          <div className="header-diagram-menu header-nav-tabs">
+            <Link
+              href="/dashboard/coverage"
+              className="header-nav-link is-active"
+              aria-current="page"
+            >
+              <span className="header-nav-link-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" role="presentation" focusable="false">
+                  <path d="M1.5 8c1.8-3 4-4.5 6.5-4.5S12.7 5 14.5 8c-1.8 3-4 4.5-6.5 4.5S3.3 11 1.5 8z" />
+                  <circle cx="8" cy="8" r="2.1" />
+                </svg>
+              </span>
+              <span>Report</span>
+            </Link>
+            <Link href="/jobs" className="header-nav-link">
+              <span className="header-nav-link-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" role="presentation" focusable="false">
+                  <path d="M3 4h6M3 8h10M3 12h8" />
+                </svg>
+              </span>
+              <span>Queue</span>
+              {queueJobsCount !== null && (
+                <span
+                  className="header-nav-link-badge"
+                  aria-label={`${queueJobsCount} current jobs`}
+                  title={`${queueJobsCount} current jobs`}
+                >
+                  {queueJobsCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>
@@ -2011,10 +2114,6 @@ export function CoverageReportClient({
 
       <section className="language-panel-section">
         <div className="language-panel-layout">
-          <LanguageGeoSelector
-            value={selectedLanguageIds}
-            options={languageOptions}
-          />
           <div className="language-panel-diagram">
             <CoverageBar
               counts={overallCounts}
@@ -2026,6 +2125,10 @@ export function CoverageReportClient({
               ariaLabel={reportConfig.ariaLabel}
             />
           </div>
+          <LanguageGeoSelector
+            value={selectedLanguageIds}
+            options={languageOptions}
+          />
         </div>
       </section>
 

@@ -29,6 +29,9 @@ export interface JobOptions {
 export interface JobCreatePayload {
   muxAssetId: string;
   languages: string[];
+  sourceCollectionTitle?: string;
+  sourceMediaTitle?: string;
+  requestedLanguageAbbreviations?: string[];
   options?: JobOptions;
 }
 
@@ -60,6 +63,9 @@ export interface JobRecord {
   id: string;
   muxAssetId: string;
   languages: string[];
+  sourceCollectionTitle?: string;
+  sourceMediaTitle?: string;
+  requestedLanguageAbbreviations?: string[];
   options: JobOptions;
   status: JobStatus;
   currentStep?: WorkflowStepName;

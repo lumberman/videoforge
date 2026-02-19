@@ -46,6 +46,18 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase()
 }
 
+function countryIdToFlagEmoji(countryId: string): string {
+  const normalized = countryId.trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(normalized)) return ''
+
+  const first = normalized.codePointAt(0)
+  const second = normalized.codePointAt(1)
+  if (first == null || second == null) return ''
+
+  const regionalIndicatorOffset = 0x1f1a5
+  return String.fromCodePoint(first + regionalIndicatorOffset, second + regionalIndicatorOffset)
+}
+
 function formatSpeakerPercentage(value: number, total: number): string {
   if (!Number.isFinite(value) || value <= 0) return ''
   if (!Number.isFinite(total) || total <= 0) return ''
@@ -130,15 +142,6 @@ export function LanguageGeoSelector({
       })),
     [draftLanguages, languageLabelById]
   )
-
-  const hasPendingChanges = useMemo(() => {
-    const valueSet = new Set(value)
-    if (valueSet.size !== draftLanguages.length) return true
-    for (const id of draftLanguages) {
-      if (!valueSet.has(id)) return true
-    }
-    return false
-  }, [draftLanguages, value])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -492,12 +495,59 @@ export function LanguageGeoSelector({
     applyUrlParams(draftLanguages)
   }
 
+  const handlePrimaryAction = () => {
+    if (isPickerExpanded) {
+      confirmSelection()
+      return
+    }
+
+    setIsPickerExpanded(true)
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+    })
+  }
+
   useEffect(() => {
     setDraftLanguages(value)
   }, [value])
 
   return (
     <div className={className ? `geo-panel ${className}` : 'geo-panel'}>
+      <div className="geo-selected geo-selected--external">
+        <p className="geo-selected-title">Selected languages</p>
+        <div
+          className={`geo-selected-actions${
+            selectedLanguagePills.length > 0 ? ' has-pills' : ''
+          }`}
+        >
+          {selectedLanguagePills.length > 0 && (
+            <div className="geo-selected-pills">
+              {selectedLanguagePills.map((language) => (
+                <button
+                  key={language.id}
+                  type="button"
+                  className="geo-selected-pill"
+                  onClick={() => handleSelect(language.id)}
+                  aria-label={`Remove ${language.label}`}
+                >
+                  {language.label}
+                  <span className="geo-selected-pill-remove" aria-hidden="true">
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            className="geo-confirm"
+            onClick={handlePrimaryAction}
+            disabled={isLoading}
+          >
+            {isPickerExpanded ? 'Confirm' : 'Select languages'}
+          </button>
+        </div>
+      </div>
       <div className="geo-dropdown" role="group" aria-label="Language">
         <div className="geo-toolbar">
           <div className="geo-search-shell">
@@ -576,7 +626,7 @@ export function LanguageGeoSelector({
                               onClick={() => toggleCountry(country.id)}
                               aria-pressed={draftCountries.has(country.id)}
                             >
-                              {country.name}
+                              {countryIdToFlagEmoji(country.id)} {country.name}
                             </button>
                           ))}
                         </div>
@@ -622,41 +672,6 @@ export function LanguageGeoSelector({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="geo-selected">
-          <p className="geo-selected-title">Selected languages</p>
-          <div
-            className={`geo-footer${
-              selectedLanguagePills.length > 0 ? ' geo-footer--with-pills' : ''
-            }`}
-          >
-            {selectedLanguagePills.length > 0 && (
-              <div className="geo-selected-pills">
-                {selectedLanguagePills.map((language) => (
-                  <button
-                    key={language.id}
-                    type="button"
-                    className="geo-selected-pill"
-                    onClick={() => handleSelect(language.id)}
-                    aria-label={`Remove ${language.label}`}
-                  >
-                    {language.label}
-                    <span className="geo-selected-pill-remove" aria-hidden="true">
-                      ×
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <button
-              type="button"
-              className="geo-confirm"
-              onClick={confirmSelection}
-              disabled={!hasPendingChanges || isLoading}
-            >
-              Confirm
-            </button>
           </div>
         </div>
       </div>

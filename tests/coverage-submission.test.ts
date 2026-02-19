@@ -79,6 +79,9 @@ test('submitCoverageSelection returns deterministic mixed-result summary', async
       selectableVideo('video-3', 'asset-3')
     ],
     languageIds: ['es'],
+    languageAbbreviationsById: {
+      es: 'SPA'
+    },
     options: {
       generateVoiceover: false,
       uploadMux: false,

@@ -40,6 +40,35 @@ function parsePayload(input: unknown): JobCreatePayload {
   }
 
   if (
+    body.sourceCollectionTitle !== undefined &&
+    typeof body.sourceCollectionTitle !== 'string'
+  ) {
+    throw new PayloadValidationError('sourceCollectionTitle must be a string when provided.');
+  }
+
+  if (body.sourceMediaTitle !== undefined && typeof body.sourceMediaTitle !== 'string') {
+    throw new PayloadValidationError('sourceMediaTitle must be a string when provided.');
+  }
+
+  if (
+    body.requestedLanguageAbbreviations !== undefined &&
+    !Array.isArray(body.requestedLanguageAbbreviations)
+  ) {
+    throw new PayloadValidationError(
+      'requestedLanguageAbbreviations must be an array when provided.'
+    );
+  }
+
+  if (
+    Array.isArray(body.requestedLanguageAbbreviations) &&
+    body.requestedLanguageAbbreviations.some((abbr) => typeof abbr !== 'string')
+  ) {
+    throw new PayloadValidationError(
+      'requestedLanguageAbbreviations must contain only strings.'
+    );
+  }
+
+  if (
     body.options !== undefined &&
     (typeof body.options !== 'object' || body.options === null || Array.isArray(body.options))
   ) {
@@ -64,6 +93,11 @@ function parsePayload(input: unknown): JobCreatePayload {
   return {
     muxAssetId,
     languages: [...new Set(body.languages.map((lang) => lang.trim()).filter(Boolean))],
+    sourceCollectionTitle: body.sourceCollectionTitle?.trim() || undefined,
+    sourceMediaTitle: body.sourceMediaTitle?.trim() || undefined,
+    requestedLanguageAbbreviations: body.requestedLanguageAbbreviations
+      ? [...new Set(body.requestedLanguageAbbreviations.map((abbr) => abbr.trim()).filter(Boolean))]
+      : undefined,
     options: {
       generateVoiceover: normalizeBoolean(
         body.options?.generateVoiceover,

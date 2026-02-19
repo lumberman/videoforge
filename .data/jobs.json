@@ -1726,6 +1726,331 @@
       "currentStep": "transcription",
       "startedAt": "2026-02-18T01:32:51.113Z",
       "completedAt": "2026-02-18T01:32:52.026Z"
+    },
+    {
+      "id": "job_281558af2ef440bfaa43",
+      "muxAssetId": "QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+      "languages": [
+        "496"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-18T17:34:00.371Z",
+      "updatedAt": "2026-02-18T17:34:01.526Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T17:34:00.380Z",
+          "finishedAt": "2026-02-18T17:34:00.380Z"
+        },
+        {
+          "name": "transcription",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-18T17:34:00.381Z",
+          "finishedAt": "2026-02-18T17:34:01.524Z",
+          "error": "Mux AI subtitle generation request failed: Mux API returned HTTP 400 while generating subtitles for asset QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "chapters",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "transcription",
+          "message": "Mux AI subtitle generation request failed: Mux API returned HTTP 400 while generating subtitles for asset QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+          "at": "2026-02-18T17:34:01.020Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI subtitle generation request failed: Mux API returned HTTP 400 while generating subtitles for asset QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+          "at": "2026-02-18T17:34:01.231Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "transcription",
+          "message": "Mux AI subtitle generation request failed: Mux API returned HTTP 400 while generating subtitles for asset QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+          "at": "2026-02-18T17:34:01.524Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "transcription",
+      "startedAt": "2026-02-18T17:34:00.378Z",
+      "completedAt": "2026-02-18T17:34:01.526Z"
+    },
+    {
+      "id": "job_754b45d56b5f41f4bb82",
+      "muxAssetId": "u8EK00ad57wq018d00GkjWDLokH29v2bxS3MPggT2n02QRA",
+      "languages": [
+        "496"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "failed",
+      "retries": 2,
+      "createdAt": "2026-02-18T17:44:57.106Z",
+      "updatedAt": "2026-02-18T17:45:30.861Z",
+      "artifacts": {},
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T17:44:57.181Z",
+          "finishedAt": "2026-02-18T17:44:57.186Z"
+        },
+        {
+          "name": "transcription",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T17:44:57.194Z",
+          "finishedAt": "2026-02-18T17:45:30.135Z"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T17:45:30.137Z",
+          "finishedAt": "2026-02-18T17:45:30.138Z"
+        },
+        {
+          "name": "chapters",
+          "status": "failed",
+          "retries": 2,
+          "startedAt": "2026-02-18T17:45:30.139Z",
+          "finishedAt": "2026-02-18T17:45:30.841Z",
+          "error": "Mux AI workflow chapter extraction failed: function call threw an exception: Failed to generate chapters with openai: openai API key is required. Provide openai credentials via workflow credentials or set OPENAI_API_KEY environment variable."
+        },
+        {
+          "name": "metadata",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "embeddings",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "translation",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "voiceover",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "artifact_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "mux_upload",
+          "status": "pending",
+          "retries": 0
+        },
+        {
+          "name": "cms_notify",
+          "status": "pending",
+          "retries": 0
+        }
+      ],
+      "errors": [
+        {
+          "step": "chapters",
+          "message": "Mux AI workflow chapter extraction failed: function call threw an exception: Failed to generate chapters with openai: openai API key is required. Provide openai credentials via workflow credentials or set OPENAI_API_KEY environment variable.",
+          "at": "2026-02-18T17:45:30.560Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "chapters",
+          "message": "Mux AI workflow chapter extraction failed: function call threw an exception: Failed to generate chapters with openai: openai API key is required. Provide openai credentials via workflow credentials or set OPENAI_API_KEY environment variable.",
+          "at": "2026-02-18T17:45:30.696Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        },
+        {
+          "step": "chapters",
+          "message": "Mux AI workflow chapter extraction failed: function call threw an exception: Failed to generate chapters with openai: openai API key is required. Provide openai credentials via workflow credentials or set OPENAI_API_KEY environment variable.",
+          "at": "2026-02-18T17:45:30.841Z",
+          "code": "MUX_AI_OPERATION_FAILED",
+          "operatorHint": "Check Mux credentials/service status and confirm the selected @mux/ai workflow function is available.",
+          "isDependencyError": true
+        }
+      ],
+      "currentStep": "chapters",
+      "startedAt": "2026-02-18T17:44:57.133Z",
+      "completedAt": "2026-02-18T17:45:30.861Z"
+    },
+    {
+      "id": "job_d9c43e01cb734a979081",
+      "muxAssetId": "QAv8HB5RWTNF5WdlBfvLPRstq8Edslr02ouvCL8qovPM",
+      "languages": [
+        "496"
+      ],
+      "options": {
+        "generateVoiceover": false,
+        "uploadMux": false,
+        "notifyCms": false
+      },
+      "status": "completed",
+      "retries": 0,
+      "createdAt": "2026-02-18T18:18:01.476Z",
+      "updatedAt": "2026-02-18T18:18:41.753Z",
+      "artifacts": {
+        "transcript": "/api/artifacts/job_d9c43e01cb734a979081/transcript.json",
+        "subtitlesVtt": "/api/artifacts/job_d9c43e01cb734a979081/subtitles.vtt",
+        "chapters": "/api/artifacts/job_d9c43e01cb734a979081/chapters.json",
+        "metadata": "/api/artifacts/job_d9c43e01cb734a979081/metadata.json",
+        "embeddings": "/api/artifacts/job_d9c43e01cb734a979081/embeddings.json",
+        "translations": "/api/artifacts/job_d9c43e01cb734a979081/translations.json",
+        "artifactManifest": "/api/artifacts/job_d9c43e01cb734a979081/artifacts.json"
+      },
+      "steps": [
+        {
+          "name": "download_video",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:01.486Z",
+          "finishedAt": "2026-02-18T18:18:01.493Z"
+        },
+        {
+          "name": "transcription",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:01.494Z",
+          "finishedAt": "2026-02-18T18:18:02.080Z"
+        },
+        {
+          "name": "structured_transcript",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:02.083Z",
+          "finishedAt": "2026-02-18T18:18:02.085Z"
+        },
+        {
+          "name": "chapters",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:02.086Z",
+          "finishedAt": "2026-02-18T18:18:06.956Z"
+        },
+        {
+          "name": "metadata",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:06.957Z",
+          "finishedAt": "2026-02-18T18:18:15.738Z"
+        },
+        {
+          "name": "embeddings",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:15.740Z",
+          "finishedAt": "2026-02-18T18:18:17.233Z"
+        },
+        {
+          "name": "translation",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:17.234Z",
+          "finishedAt": "2026-02-18T18:18:41.746Z"
+        },
+        {
+          "name": "voiceover",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-18T18:18:41.747Z"
+        },
+        {
+          "name": "artifact_upload",
+          "status": "completed",
+          "retries": 0,
+          "startedAt": "2026-02-18T18:18:41.747Z",
+          "finishedAt": "2026-02-18T18:18:41.750Z"
+        },
+        {
+          "name": "mux_upload",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-18T18:18:41.752Z"
+        },
+        {
+          "name": "cms_notify",
+          "status": "skipped",
+          "retries": 0,
+          "finishedAt": "2026-02-18T18:18:41.752Z"
+        }
+      ],
+      "errors": [],
+      "currentStep": "artifact_upload",
+      "startedAt": "2026-02-18T18:18:01.481Z",
+      "completedAt": "2026-02-18T18:18:41.753Z"
     }
   ]
 }

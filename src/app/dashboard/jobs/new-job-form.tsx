@@ -78,31 +78,34 @@ export function NewJobForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card">
-      <h2 style={{ marginTop: 0 }}>Create Enrichment Job</h2>
-      <div className="grid cols-2">
-        <label>
-          <div className="small">Mux Asset ID</div>
+    <form onSubmit={onSubmit} className="collection-card jobs-card jobs-form">
+      <div className="jobs-card-header">
+        <h2 className="jobs-card-title">Create Enrichment Job</h2>
+      </div>
+
+      <div className="grid cols-2 jobs-form-grid">
+        <label className="jobs-field">
+          <div className="small jobs-field-label">Mux Asset ID</div>
           <input
             value={muxAssetId}
             onChange={(e) => setMuxAssetId(e.target.value)}
             required
-            style={{ width: '100%', padding: 8 }}
+            className="jobs-input"
           />
         </label>
-        <label>
-          <div className="small">Languages (comma-separated)</div>
+        <label className="jobs-field">
+          <div className="small jobs-field-label">Languages (comma-separated)</div>
           <input
             value={languages}
             onChange={(e) => setLanguages(e.target.value)}
-            style={{ width: '100%', padding: 8 }}
+            className="jobs-input"
             placeholder="es,fr,de"
           />
         </label>
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <label>
+      <div className="jobs-options">
+        <label className="jobs-option">
           <input
             type="checkbox"
             checked={generateVoiceover}
@@ -110,7 +113,7 @@ export function NewJobForm() {
           />{' '}
           Generate voiceover
         </label>
-        <label>
+        <label className="jobs-option">
           <input
             type="checkbox"
             checked={uploadMux}
@@ -118,7 +121,7 @@ export function NewJobForm() {
           />{' '}
           Upload to Mux
         </label>
-        <label>
+        <label className="jobs-option">
           <input
             type="checkbox"
             checked={notifyCms}
@@ -128,8 +131,8 @@ export function NewJobForm() {
         </label>
       </div>
 
-      <div style={{ marginTop: 14, display: 'flex', gap: 12, alignItems: 'center' }}>
-        <button type="submit" disabled={!canSubmit} style={{ padding: '8px 14px' }}>
+      <div className="jobs-actions">
+        <button type="submit" disabled={!canSubmit} className="jobs-primary-button">
           {isSubmitting ? 'Creating...' : 'Start Job'}
         </button>
       </div>
@@ -138,8 +141,7 @@ export function NewJobForm() {
         <p
           role="status"
           aria-live="polite"
-          className="small"
-          style={{ marginTop: 10, color: status.type === 'error' ? 'var(--error)' : 'var(--ok)' }}
+          className={`small jobs-status ${status.type === 'error' ? 'jobs-status-error' : 'jobs-status-success'}`}
         >
           {status.message}{' '}
           {status.type === 'success' ? <a href={`/jobs/${status.jobId}`}>Open job</a> : null}

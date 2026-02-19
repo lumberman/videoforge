@@ -262,6 +262,18 @@ Response includes:
 
 ---
 
+### 11.3 Implementation Decisions (2026-02-18)
+
+- Updated `/dashboard/jobs` and `/dashboard/jobs/[id]` UI to match the coverage report visual system:
+  - reused coverage shell structure (`report-shell`, `report-header`) and card feel (`collection-card` parity)
+  - aligned content width and responsive spacing to the same coverage layout breakpoints
+  - aligned typography and control rhythm to the same design language used in coverage
+- Updated new-job form styling to use the same spacing, field treatment, and action-button feel as coverage cards.
+- Hid the legacy global dashboard header on jobs routes so jobs pages render with the same top-level visual framing as coverage.
+- Kept all job API/data behavior unchanged; this change is presentation-only.
+
+---
+
 ### 12. Glossary
 
 - **Workflow.dev World:** Backend storage/queue environment for workflow.dev.

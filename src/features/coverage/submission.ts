@@ -9,6 +9,9 @@ import type {
 type CreateJobInput = {
   muxAssetId: string;
   languages: string[];
+  sourceCollectionTitle?: string;
+  sourceMediaTitle?: string;
+  requestedLanguageAbbreviations?: string[];
   options: JobOptions;
 };
 
@@ -17,8 +20,9 @@ type CreateJobOutput = {
 };
 
 type SubmitCoverageSelectionInput = {
-  selectedVideos: CoverageVideo[];
+  selectedVideos: Array<CoverageVideo & { collectionTitle?: string | null }>;
   languageIds: string[];
+  languageAbbreviationsById: Record<string, string>;
   options: JobOptions;
   createJob: (input: CreateJobInput) => Promise<CreateJobOutput>;
 };
@@ -97,6 +101,15 @@ export async function submitCoverageSelection(
       const created = await input.createJob({
         muxAssetId: video.muxAssetId,
         languages: input.languageIds,
+        sourceCollectionTitle: video.collectionTitle ?? undefined,
+        sourceMediaTitle: video.title,
+        requestedLanguageAbbreviations: [
+          ...new Set(
+            input.languageIds.map(
+              (languageId) => input.languageAbbreviationsById[languageId] ?? languageId
+            )
+          )
+        ],
         options: input.options
       });
       outcomes.push({
