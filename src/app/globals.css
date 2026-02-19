@@ -2675,6 +2675,15 @@ html[data-coverage-loading="true"] .collections::after {
   text-decoration: none;
 }
 
+.jobs-refresh-link:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.jobs-live-status {
+  color: #756f63;
+}
+
 .jobs-section-title {
   margin: 0 0 10px;
   font-size: 1rem;
