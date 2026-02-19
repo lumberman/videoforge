@@ -37,6 +37,8 @@ test('LiveJobsTable renders auto-update status and refresh action', () => {
   assert.match(html, /Auto-updating every 5s/i);
   assert.match(html, /Refresh now/i);
   assert.match(html, /In progress at Metadata/i);
+  assert.match(html, /role="link"/i);
+  assert.match(html, /tabindex="0"/i);
 });
 
 test('LiveJobsTable renders empty state when there are no jobs', () => {

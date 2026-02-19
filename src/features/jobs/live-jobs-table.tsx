@@ -26,6 +26,15 @@ type RunPollOptions = {
   scheduleNext: boolean;
 };
 
+const INTERACTIVE_TARGET_SELECTOR = 'a,button,input,select,textarea,[role="button"],[role="link"]';
+
+function shouldIgnoreRowNavigation(target: EventTarget | null, rowElement: HTMLElement): boolean {
+  if (!(target instanceof Element)) return false;
+  const interactiveTarget = target.closest(INTERACTIVE_TARGET_SELECTOR);
+  if (!interactiveTarget) return false;
+  return interactiveTarget !== rowElement;
+}
+
 export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTableProps) {
   const [jobs, setJobs] = useState(initialJobs);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -191,7 +200,22 @@ export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTable
 
                       return (
                         <React.Fragment key={job.id}>
-                          <tr className={latestError ? 'jobs-row-with-issue' : undefined}>
+                          <tr
+                            className={`jobs-clickable-row${latestError ? ' jobs-row-with-issue' : ''}`}
+                            onClick={(event) => {
+                              if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) return;
+                              window.location.assign(`/jobs/${job.id}`);
+                            }}
+                            onKeyDown={(event) => {
+                              if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+                              event.preventDefault();
+                              window.location.assign(`/jobs/${job.id}`);
+                            }}
+                            tabIndex={0}
+                            role="link"
+                            aria-label={`Open job ${job.id}`}
+                          >
                             <td>{formatTime(job.createdAt)}</td>
                             <td className="jobs-source-cell">
                               <span className="jobs-source-title" title={getSourceTitle(job)}>

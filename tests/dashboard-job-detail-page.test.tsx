@@ -35,9 +35,10 @@ test('job detail page renders artifacts and error log details', async () => {
 
     assert.match(html, /Job Details/i);
     assert.match(html, /Step Execution/i);
-    assert.match(html, /Artifacts/i);
+    assert.doesNotMatch(html, /<h3[^>]*>Artifacts<\/h3>/i);
     assert.match(html, /Error Log/i);
     assert.match(html, /metadata extraction failed/i);
+    assert.match(html, /Transcription[\s\S]*transcript/i);
     assert.match(html, /transcript/i);
   });
 });
