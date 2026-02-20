@@ -47,6 +47,9 @@ test('job detail page renders artifacts and error log details', async () => {
     assert.match(html, /Error Log/i);
     assert.match(html, /metadata extraction failed/i);
     assert.match(html, /Transcription[\s\S]*transcript/i);
+    assert.match(html, /Generates a timestamped transcript from the source audio\./i);
+    assert.match(html, /Subtitle Post Process/i);
+    assert.match(html, /Refines subtitle readability and theology-sensitive wording before delivery\./i);
     assert.match(html, /transcript/i);
     assert.match(html, /Mux ID/i);
     assert.match(html, /href=\"https:\/\/player\.mux\.com\/playback-dashboard-detail\"/i);

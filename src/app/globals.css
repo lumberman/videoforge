@@ -2909,7 +2909,7 @@ body.jobs-standalone .jobs-step-job-id {
 
 .jobs-summary-card .jobs-detail-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 24px;
   row-gap: 12px;
 }
@@ -2973,7 +2973,7 @@ body.jobs-standalone .jobs-step-job-id {
   background: #f3ece1;
   color: #5f574c;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -2996,11 +2996,12 @@ body.jobs-standalone .jobs-step-job-id {
 }
 
 .jobs-mux-row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  max-width: 100%;
+  gap: 10px;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
 }
 
 .jobs-mux-id {
@@ -3011,7 +3012,17 @@ body.jobs-standalone .jobs-step-job-id {
   padding: 0;
   border: 0;
   min-width: 0;
-  word-break: break-all;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobs-mux-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .jobs-inline-icon-button {
@@ -3292,12 +3303,30 @@ body.jobs-standalone .jobs-step-job-id {
 .jobs-step-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
 
 .jobs-step-label-icon {
   flex: 0 0 auto;
-  color: #6b6257;
+  color: rgb(107 98 87 / 0.65);
+  margin-top: 0;
+}
+
+.jobs-step-label-text {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jobs-step-label-title {
+  line-height: 1.2;
+}
+
+.jobs-step-label-subtitle {
+  color: #7a7267;
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.25;
 }
 
 .jobs-step-artifact-link {
@@ -3633,6 +3662,17 @@ body.jobs-standalone .jobs-step-job-id {
   }
 
   .jobs-card-header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .jobs-summary-card .jobs-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .jobs-mux-row {
+    flex-direction: column;
     align-items: flex-start;
   }
 }

@@ -174,26 +174,28 @@ export function LiveJobDetailHeader({
               <code className="jobs-mux-id" title={job.muxAssetId}>
                 {job.muxAssetId}
               </code>
-              <button
-                type="button"
-                className="jobs-inline-icon-button"
-                onClick={handleCopyMuxId}
-                aria-label="Copy Mux ID"
-                title={muxIdCopied ? 'Copied' : 'Copy Mux ID'}
-              >
-                {muxIdCopied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
-              </button>
-              {muxWatchUrl ? (
-                <a
-                  href={muxWatchUrl}
-                  className="jobs-mux-watch-link"
-                  target="_blank"
-                  rel="noreferrer"
+              <div className="jobs-mux-actions">
+                <button
+                  type="button"
+                  className="jobs-inline-icon-button"
+                  onClick={handleCopyMuxId}
+                  aria-label="Copy Mux ID"
+                  title={muxIdCopied ? 'Copied' : 'Copy Mux ID'}
                 >
-                  <ExternalLink size={14} aria-hidden="true" />
-                  <span>Watch on Mux</span>
-                </a>
-              ) : null}
+                  {muxIdCopied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                </button>
+                {muxWatchUrl ? (
+                  <a
+                    href={muxWatchUrl}
+                    className="jobs-mux-watch-link"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink size={14} aria-hidden="true" />
+                    <span>Watch on Mux</span>
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

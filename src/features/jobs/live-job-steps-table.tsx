@@ -52,6 +52,22 @@ const ARTIFACT_KEYS_BY_STEP: Record<WorkflowStepName, string[]> = {
   cms_notify: []
 };
 
+const STEP_DESCRIPTION_BY_NAME: Record<WorkflowStepName, string> = {
+  download_video: 'Fetches source media and validates job inputs.',
+  transcription: 'Generates a timestamped transcript from the source audio.',
+  structured_transcript: 'Builds subtitle-ready VTT and normalized transcript cues.',
+  subtitle_post_process:
+    'Refines subtitle readability and theology-sensitive wording before delivery.',
+  chapters: 'Detects chapter boundaries and labels major content sections.',
+  metadata: 'Extracts summary, tags, and structured content metadata.',
+  embeddings: 'Creates semantic vectors for search and retrieval.',
+  translation: 'Translates transcript content into target languages.',
+  voiceover: 'Synthesizes voiceover audio from generated text.',
+  artifact_upload: 'Uploads generated artifacts and writes the manifest.',
+  mux_upload: 'Publishes output assets to Mux for playback.',
+  cms_notify: 'Notifies downstream CMS integrations of completion.'
+};
+
 function formatDuration(startedAt?: string, finishedAt?: string): string {
   if (!startedAt || !finishedAt) {
     return '–';
@@ -334,8 +350,13 @@ export function LiveJobStepsTable({ initialJob, headingMeta, onJobUpdate }: Live
                   <tr className={inlineError ? 'jobs-row-with-issue' : undefined}>
                     <td>
                       <span className="jobs-step-label">
-                        <StepIcon className="jobs-step-label-icon" aria-hidden="true" size={16} />
-                        <span>{formatStepName(step.name)}</span>
+                        <StepIcon className="jobs-step-label-icon" aria-hidden="true" size={24} />
+                        <span className="jobs-step-label-text">
+                          <span className="jobs-step-label-title">{formatStepName(step.name)}</span>
+                          <span className="jobs-step-label-subtitle">
+                            {STEP_DESCRIPTION_BY_NAME[step.name]}
+                          </span>
+                        </span>
                       </span>
                     </td>
                     <td>{formatDuration(step.startedAt, step.finishedAt)}</td>
