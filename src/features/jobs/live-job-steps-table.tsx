@@ -35,6 +35,13 @@ const ARTIFACT_KEYS_BY_STEP: Record<WorkflowStepName, string[]> = {
   download_video: [],
   transcription: ['transcript'],
   structured_transcript: ['subtitlesVtt'],
+  subtitle_post_process: [
+    'subtitlePostProcessManifest',
+    'subtitlesByLanguage',
+    'subtitleTheologyByLanguage',
+    'subtitleLanguageDeltasByLanguage',
+    'subtitleTrackMetadata'
+  ],
   chapters: ['chapters'],
   metadata: ['metadata'],
   embeddings: ['embeddings'],
@@ -92,6 +99,8 @@ function getStepLabelIcon(stepName: WorkflowStepName): LucideIcon {
     case 'transcription':
       return FileAudio2;
     case 'structured_transcript':
+      return Captions;
+    case 'subtitle_post_process':
       return Captions;
     case 'chapters':
       return ListOrdered;

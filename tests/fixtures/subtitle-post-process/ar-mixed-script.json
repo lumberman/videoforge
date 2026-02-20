@@ -1,0 +1,19 @@
+{
+  "assetId": "fixture-ar-mixed-script",
+  "bcp47": "ar",
+  "subtitleOrigin": "ai-raw",
+  "segments": [
+    {
+      "id": "1",
+      "start": 0,
+      "end": 3.4,
+      "text": "هذا اختبار لمصطلح Grace في سياق عربي."
+    },
+    {
+      "id": "2",
+      "start": 3.9,
+      "end": 7,
+      "text": "ويجب أن يبقى الترتيب المنطقي للنص كما هو."
+    }
+  ]
+}

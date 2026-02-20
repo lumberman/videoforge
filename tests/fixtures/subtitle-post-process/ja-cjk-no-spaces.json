@@ -1,0 +1,19 @@
+{
+  "assetId": "fixture-ja-cjk-no-spaces",
+  "bcp47": "ja",
+  "subtitleOrigin": "ai-raw",
+  "segments": [
+    {
+      "id": "1",
+      "start": 0,
+      "end": 3,
+      "text": "字幕品質を確認する日本語テスト"
+    },
+    {
+      "id": "2",
+      "start": 3.4,
+      "end": 6.5,
+      "text": "改行なしで読みやすさ維持"
+    }
+  ]
+}

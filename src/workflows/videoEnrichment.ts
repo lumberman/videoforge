@@ -10,13 +10,21 @@ import { generateChapters } from '@/services/chapters';
 import { generateEmbeddings } from '@/services/embeddings';
 import { extractMetadata } from '@/services/metadata';
 import { uploadEnrichedAsset } from '@/services/mux';
+import type { MuxSubtitleTrackAttachRequest } from '@/services/mux';
 import {
   storeBinaryArtifact,
   storeJsonArtifact,
   storeTextArtifact
 } from '@/services/storage';
-import { isMuxAiError, preprocessMuxAssetWithPrimitives } from '@/services/mux-ai';
-import { transcribeVideo } from '@/services/transcription';
+import { isAllowedLanguage } from '@/config/subtitle-post-process';
+import { isMuxAiError } from '@/services/mux-ai';
+import { fetchTranscriptForAsset } from '@/services/mux-data-adapter';
+import { runSubtitlePostProcess } from '@/services/subtitle-post-process';
+import type {
+  SubtitleOrigin,
+  SubtitlePostProcessOutput,
+  SubtitleSegment
+} from '@/services/subtitle-post-process/types';
 import { translateTranscript } from '@/services/translation';
 import { createVoiceover } from '@/services/voiceover';
 import { getWorkflowWorld, type WorkflowWorld } from '@/workflows/world';
@@ -89,6 +97,229 @@ function toVttTimestamp(totalSeconds: number): string {
   return `${hours}:${minutes}:${seconds}.${milliseconds}`;
 }
 
+interface SubtitleProcessArtifact {
+  language: string;
+  output: SubtitlePostProcessOutput;
+  vttUrl: string;
+  qaReportUrl: string;
+  theologyIssuesUrl: string;
+  languageQualityDeltasUrl: string;
+  attachMetadata: MuxSubtitleTrackAttachRequest;
+}
+
+interface SubtitlePostProcessResult {
+  primaryVttUrl?: string;
+  manifestUrl: string;
+  tracks: SubtitleProcessArtifact[];
+}
+
+function transcriptToSubtitleSegments(transcript: Transcript): SubtitleSegment[] {
+  return transcript.segments.map((segment, index) => ({
+    id: `src-${index + 1}`,
+    start: segment.startSec,
+    end: segment.endSec,
+    text: segment.text
+  }));
+}
+
+function translationToSubtitleSegments(
+  translation: TranslationResult,
+  fallbackTranscript: Transcript
+): SubtitleSegment[] {
+  if (translation.segments && translation.segments.length > 0) {
+    return translation.segments.map((segment, index) => ({
+      id: `tr-${translation.language}-${index + 1}`,
+      start: segment.startSec,
+      end: segment.endSec,
+      text: segment.text
+    }));
+  }
+
+  const start = fallbackTranscript.segments[0]?.startSec ?? 0;
+  const end =
+    fallbackTranscript.segments[fallbackTranscript.segments.length - 1]?.endSec ??
+    start + 1;
+  return [
+    {
+      id: `tr-${translation.language}-1`,
+      start,
+      end: Math.max(end, start + 1),
+      text: translation.text
+    }
+  ];
+}
+
+async function runSubtitlePostProcessStep(opts: {
+  jobId: string;
+  muxAssetId: string;
+  transcript: Transcript;
+  translations?: TranslationResult[];
+}): Promise<SubtitlePostProcessResult> {
+  const tracks: Array<{
+    language: string;
+    subtitleOrigin: SubtitleOrigin | undefined;
+    segments: SubtitleSegment[];
+  }> = [];
+
+  tracks.push({
+    language: opts.transcript.language,
+    subtitleOrigin: 'ai-raw',
+    segments: transcriptToSubtitleSegments(opts.transcript)
+  });
+
+  for (const translation of opts.translations ?? []) {
+    tracks.push({
+      language: translation.language,
+      subtitleOrigin: translation.subtitleOrigin,
+      segments: translationToSubtitleSegments(translation, opts.transcript)
+    });
+  }
+
+  const artifacts: SubtitleProcessArtifact[] = [];
+  let primaryVttUrl: string | undefined;
+
+  for (const track of tracks) {
+    if (!isAllowedLanguage(track.language)) {
+      continue;
+    }
+
+    const output = await runSubtitlePostProcess({
+      assetId: opts.muxAssetId,
+      bcp47: track.language,
+      subtitleOrigin: track.subtitleOrigin,
+      segments: track.segments
+    });
+
+    const safeLanguage = track.language.replace(/[^a-zA-Z0-9-]/g, '_');
+    const vttUrl = await storeTextArtifact(
+      opts.jobId,
+      `subtitles.${safeLanguage}.vtt`,
+      output.vtt
+    );
+    const qaReportUrl = await storeJsonArtifact(
+      opts.jobId,
+      `subtitle-qa.${safeLanguage}.json`,
+      {
+        language: track.language,
+        subtitleOriginBefore: output.subtitleOriginBefore,
+        subtitleOriginAfter: output.subtitleOriginAfter,
+        languageClass: output.languageClass,
+        profile: output.profile,
+        theologyIssues: output.theologyIssues,
+        languageQualityDeltas: output.languageQualityDeltas,
+        validationErrors: output.validationErrors,
+        aiRetryCount: output.aiRetryCount,
+        usedFallback: output.usedFallback,
+        skipped: output.skipped,
+        skipReason: output.skipReason,
+        promptVersion: output.promptVersion,
+        validatorVersion: output.validatorVersion,
+        fallbackVersion: output.fallbackVersion,
+        whisperSegmentsSha256: output.whisperSegmentsSha256,
+        postProcessInputSha256: output.postProcessInputSha256,
+        idempotencyKey: output.idempotencyKey,
+        cacheHit: output.cacheHit
+      }
+    );
+    const theologyIssuesUrl = await storeJsonArtifact(
+      opts.jobId,
+      `subtitle-theology.${safeLanguage}.json`,
+      {
+        language: track.language,
+        subtitleOriginBefore: output.subtitleOriginBefore,
+        subtitleOriginAfter: output.subtitleOriginAfter,
+        theologyIssues: output.theologyIssues,
+        promptVersion: output.promptVersion,
+        idempotencyKey: output.idempotencyKey
+      }
+    );
+    const languageQualityDeltasUrl = await storeJsonArtifact(
+      opts.jobId,
+      `subtitle-language-deltas.${safeLanguage}.json`,
+      {
+        language: track.language,
+        subtitleOriginBefore: output.subtitleOriginBefore,
+        subtitleOriginAfter: output.subtitleOriginAfter,
+        languageQualityDeltas: output.languageQualityDeltas,
+        promptVersion: output.promptVersion,
+        idempotencyKey: output.idempotencyKey
+      }
+    );
+
+    artifacts.push({
+      language: track.language,
+      output,
+      vttUrl,
+      qaReportUrl,
+      theologyIssuesUrl,
+      languageQualityDeltasUrl,
+      attachMetadata: {
+        language: track.language,
+        vttUrl,
+        metadata: {
+          source: 'ai_post_processed',
+          ai_post_processed: !output.usedFallback && !output.skipped,
+          subtitleOriginBefore: output.subtitleOriginBefore,
+          subtitleOriginAfter: output.subtitleOriginAfter,
+          languageClass: output.languageClass,
+          languageProfileVersion: output.profile.languageProfileVersion,
+          promptVersion: output.promptVersion,
+          validatorVersion: output.validatorVersion,
+          fallbackVersion: output.fallbackVersion,
+          whisperSegmentsSha256: output.whisperSegmentsSha256,
+          postProcessInputSha256: output.postProcessInputSha256,
+          idempotencyKey: output.idempotencyKey
+        }
+      }
+    });
+
+    if (!primaryVttUrl || track.language === opts.transcript.language) {
+      primaryVttUrl = vttUrl;
+    }
+  }
+
+  if (!primaryVttUrl) {
+    primaryVttUrl = await storeTextArtifact(
+      opts.jobId,
+      'subtitles.vtt',
+      toVtt(opts.transcript)
+    );
+  } else {
+    const primaryTrack = artifacts.find((item) => item.vttUrl === primaryVttUrl);
+    if (primaryTrack) {
+      primaryVttUrl = await storeTextArtifact(
+        opts.jobId,
+        'subtitles.vtt',
+        primaryTrack.output.vtt
+      );
+    }
+  }
+
+  const manifestUrl = await storeJsonArtifact(opts.jobId, 'subtitle-post-process-manifest.json', {
+    generatedAt: new Date().toISOString(),
+    muxAssetId: opts.muxAssetId,
+    tracks: artifacts.map((item) => ({
+      language: item.language,
+      vttUrl: item.vttUrl,
+      qaReportUrl: item.qaReportUrl,
+      theologyIssuesUrl: item.theologyIssuesUrl,
+      languageQualityDeltasUrl: item.languageQualityDeltasUrl,
+      idempotencyKey: item.output.idempotencyKey,
+      cacheHit: item.output.cacheHit,
+      subtitleOriginBefore: item.output.subtitleOriginBefore,
+      subtitleOriginAfter: item.output.subtitleOriginAfter,
+      usedFallback: item.output.usedFallback,
+      aiRetryCount: item.output.aiRetryCount,
+      skipped: item.output.skipped,
+      skipReason: item.output.skipReason,
+      whisperSegmentsSha256: item.output.whisperSegmentsSha256,
+      postProcessInputSha256: item.output.postProcessInputSha256
+    }))
+  });
+
+  return { primaryVttUrl, manifestUrl, tracks: artifacts };
+}
+
 async function runStep<T>(opts: {
   jobId: string;
   step: WorkflowStepName;
@@ -156,21 +387,19 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       task: async () => ({ ok: true })
     });
 
-    const transcript = await runStep({
+    const transcriptPayload = await runStep({
       jobId,
       step: 'transcription',
       world,
-      task: async () => transcribeVideo(job.muxAssetId)
+      task: async () => fetchTranscriptForAsset(job.muxAssetId)
     });
 
-    if (!transcript) {
+    if (!transcriptPayload) {
       throw new Error('Transcript generation did not produce output.');
     }
 
-    const primitivePreprocess = await preprocessMuxAssetWithPrimitives(
-      job.muxAssetId,
-      transcript
-    );
+    const transcript = transcriptPayload.transcript;
+    const primitivePreprocess = transcriptPayload.primitive;
     if (primitivePreprocess.warnings.length > 0) {
       for (const warning of primitivePreprocess.warnings) {
         console.warn(
@@ -180,7 +409,7 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
     }
 
     const transcriptUrl = await storeJsonArtifact(jobId, 'transcript.json', transcript);
-    const vttUrl = await runStep({
+    let vttUrl = await runStep({
       jobId,
       step: 'structured_transcript',
       world,
@@ -221,6 +450,24 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       task: async () => translateTranscript(job.muxAssetId, transcript, job.languages)
     });
 
+    const subtitlePostProcess = await runStep({
+      jobId,
+      step: 'subtitle_post_process',
+      world,
+      maxRetries: 0,
+      task: async () =>
+        runSubtitlePostProcessStep({
+          jobId,
+          muxAssetId: job.muxAssetId,
+          transcript,
+          translations
+        })
+    });
+
+    if (subtitlePostProcess?.primaryVttUrl) {
+      vttUrl = subtitlePostProcess.primaryVttUrl;
+    }
+
     const voiceoverUrl = await runStep({
       jobId,
       step: 'voiceover',
@@ -245,6 +492,7 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
           metadata,
           embeddings,
           translations,
+          subtitlePostProcess,
           voiceoverUrl,
           primitiveStoryboard: primitivePreprocess.storyboard,
           primitiveChunks: primitivePreprocess.chunks
@@ -266,7 +514,8 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
         uploadEnrichedAsset({
           jobId,
           sourceAssetId: job.muxAssetId,
-          artifactUrls
+          artifactUrls,
+          subtitleTracks: subtitlePostProcess?.tracks.map((track) => track.attachMetadata) ?? []
         })
     });
 
@@ -315,6 +564,7 @@ async function uploadAllArtifacts(
     metadata?: MetadataResult;
     embeddings?: EmbeddingVector[];
     translations?: TranslationResult[];
+    subtitlePostProcess?: SubtitlePostProcessResult;
     voiceoverUrl?: string;
     primitiveStoryboard?: Record<string, unknown> | unknown[];
     primitiveChunks?: unknown[];
@@ -349,6 +599,52 @@ async function uploadAllArtifacts(
       jobId,
       'translations.json',
       payload.translations
+    );
+  }
+
+  if (payload.subtitlePostProcess) {
+    urls.subtitlePostProcessManifest = payload.subtitlePostProcess.manifestUrl;
+    const byLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
+      (acc, track) => {
+        acc[track.language] = track.vttUrl;
+        return acc;
+      },
+      {}
+    );
+    const theologyByLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
+      (acc, track) => {
+        acc[track.language] = track.theologyIssuesUrl;
+        return acc;
+      },
+      {}
+    );
+    const languageDeltasByLanguage = payload.subtitlePostProcess.tracks.reduce<
+      Record<string, string>
+    >((acc, track) => {
+      acc[track.language] = track.languageQualityDeltasUrl;
+      return acc;
+    }, {});
+
+    urls.subtitlesByLanguage = await storeJsonArtifact(
+      jobId,
+      'subtitles-by-language.json',
+      byLanguage
+    );
+    urls.subtitleTheologyByLanguage = await storeJsonArtifact(
+      jobId,
+      'subtitle-theology-by-language.json',
+      theologyByLanguage
+    );
+    urls.subtitleLanguageDeltasByLanguage = await storeJsonArtifact(
+      jobId,
+      'subtitle-language-deltas-by-language.json',
+      languageDeltasByLanguage
+    );
+
+    urls.subtitleTrackMetadata = await storeJsonArtifact(
+      jobId,
+      'subtitle-track-metadata.json',
+      payload.subtitlePostProcess.tracks.map((track) => track.attachMetadata)
     );
   }
 

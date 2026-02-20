@@ -1,0 +1,19 @@
+{
+  "assetId": "fixture-ar-rtl-mixed",
+  "bcp47": "ar",
+  "subtitleOrigin": "ai-raw",
+  "segments": [
+    {
+      "id": "1",
+      "start": 0,
+      "end": 3.6,
+      "text": "في عام 2026 استخدمنا منفذ USB-C لنقل البيانات بسرعة."
+    },
+    {
+      "id": "2",
+      "start": 4,
+      "end": 7.5,
+      "text": "ثم عدنا إلى النص العربي دون تغيير الاتجاه."
+    }
+  ]
+}

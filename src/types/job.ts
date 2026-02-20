@@ -11,6 +11,7 @@ export type WorkflowStepName =
   | 'download_video'
   | 'transcription'
   | 'structured_transcript'
+  | 'subtitle_post_process'
   | 'chapters'
   | 'metadata'
   | 'embeddings'

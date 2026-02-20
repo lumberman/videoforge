@@ -1,0 +1,19 @@
+{
+  "assetId": "fixture-en-ltr-long",
+  "bcp47": "en",
+  "subtitleOrigin": "ai-raw",
+  "segments": [
+    {
+      "id": "1",
+      "start": 0,
+      "end": 4.8,
+      "text": "In the beginning God created the heavens and the earth."
+    },
+    {
+      "id": "2",
+      "start": 5.2,
+      "end": 9.8,
+      "text": "And the Spirit of God was moving over the waters."
+    }
+  ]
+}

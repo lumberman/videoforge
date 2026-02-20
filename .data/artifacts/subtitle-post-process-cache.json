@@ -1,0 +1,430 @@
+{
+  "entries": {
+    "ecdac4af06f4707134cfcbeaefeea1ef110a4ad4ace2fd94402a123b78fc1e48": {
+      "idempotencyKey": "ecdac4af06f4707134cfcbeaefeea1ef110a4ad4ace2fd94402a123b78fc1e48",
+      "savedAt": "2026-02-16T16:53:49.783Z",
+      "output": {
+        "bcp47": "en",
+        "languageClass": "LTR",
+        "profile": {
+          "targetCPS": 13.5,
+          "maxCPS": 17,
+          "targetCPL": 32,
+          "maxCPL": 38,
+          "maxLines": 2,
+          "minDuration": 1.3,
+          "maxDuration": 6,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "ecdac4af06f4707134cfcbeaefeea1ef110a4ad4ace2fd94402a123b78fc1e48",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.024\nseed\n\n00:00:03.074 --> 00:00:06.049\nseed\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3.025,
+            "text": "seed"
+          },
+          {
+            "index": 1,
+            "start": 3.0749999999999997,
+            "end": 6.05,
+            "text": "seed"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "d471288814d0dc3ed7933ef1b51eacb9e713f0d0c9a08e0e6e6da6e50a7a6516",
+        "whisperSegmentsSha256": "ac02c5463a5e38bda470aaa8a2d6330bad82e963edb04dc8b421b3a9a3661f88",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "183667a24480446dbaa057b6ab63988fab744bca1021c146a09882206425b33f": {
+      "idempotencyKey": "183667a24480446dbaa057b6ab63988fab744bca1021c146a09882206425b33f",
+      "savedAt": "2026-02-16T16:53:56.973Z",
+      "output": {
+        "bcp47": "en",
+        "languageClass": "LTR",
+        "profile": {
+          "targetCPS": 13.5,
+          "maxCPS": 17,
+          "targetCPL": 32,
+          "maxCPL": 38,
+          "maxLines": 2,
+          "minDuration": 1.3,
+          "maxDuration": 6,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "183667a24480446dbaa057b6ab63988fab744bca1021c146a09882206425b33f",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.024\nThis is a very long subtitle\n\n00:00:03.074 --> 00:00:06.049\nline that should be split by\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3.025,
+            "text": "This is a very long subtitle"
+          },
+          {
+            "index": 1,
+            "start": 3.0749999999999997,
+            "end": 6.05,
+            "text": "line that should be split by"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "5548fe934435329c12901587ac2c318c82ab226a9e334de59f465553938e5792",
+        "whisperSegmentsSha256": "24c3390124f63dd3883645c826dc5bd6f8ed9c1aab17a24cf1cd5a4142978f23",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "35e1e14a37e4cc3f23bde71056a6b9e628d35851ae03a40f28e5aa55b7c4a124": {
+      "idempotencyKey": "35e1e14a37e4cc3f23bde71056a6b9e628d35851ae03a40f28e5aa55b7c4a124",
+      "savedAt": "2026-02-16T16:54:03.912Z",
+      "output": {
+        "bcp47": "en",
+        "languageClass": "LTR",
+        "profile": {
+          "targetCPS": 13.5,
+          "maxCPS": 17,
+          "targetCPL": 32,
+          "maxCPL": 38,
+          "maxLines": 2,
+          "minDuration": 1.3,
+          "maxDuration": 6,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "35e1e14a37e4cc3f23bde71056a6b9e628d35851ae03a40f28e5aa55b7c4a124",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.024\nseed\n\n00:00:03.074 --> 00:00:06.049\ntext\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3.025,
+            "text": "seed"
+          },
+          {
+            "index": 1,
+            "start": 3.0749999999999997,
+            "end": 6.05,
+            "text": "text"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "57a22785d84964bcd9b4f889421230a56ab42a2f3f6ab7d4b48968ef59d6239e",
+        "whisperSegmentsSha256": "9eb255b5a2089ac15d71739e6289915e3ea8528fc7a0208a06f1541d1ccf9f48",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "90b77c2bb2ae26e199cbfc7657066a08c629384436a4e57bfed9857341e24adb": {
+      "idempotencyKey": "90b77c2bb2ae26e199cbfc7657066a08c629384436a4e57bfed9857341e24adb",
+      "savedAt": "2026-02-16T16:55:30.030Z",
+      "output": {
+        "bcp47": "en",
+        "languageClass": "LTR",
+        "profile": {
+          "targetCPS": 13.5,
+          "maxCPS": 17,
+          "targetCPL": 32,
+          "maxCPL": 38,
+          "maxLines": 2,
+          "minDuration": 1.3,
+          "maxDuration": 6,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "90b77c2bb2ae26e199cbfc7657066a08c629384436a4e57bfed9857341e24adb",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.849\nIn the beginning God created the\nheavens and the earth, and the\n\n00:00:04.049 --> 00:00:07.649\nAnd the Spirit of God was\nhovering over the face of the\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3.8499999999999996,
+            "text": "In the beginning God created the\nheavens and the earth, and the"
+          },
+          {
+            "index": 1,
+            "start": 4.05,
+            "end": 7.6499999999999995,
+            "text": "And the Spirit of God was\nhovering over the face of the"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "c624fa1f73ecc2b1c370396132ae13625aece6e61d787eda611de275d18943de",
+        "whisperSegmentsSha256": "baadc93644a275c204d82d2e88907013ea6ed56b02fee71b730c2cbfee3e829c",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "1931db8820027971f9f31b61af0d7b6f2f13aaf7b54dd7ba9f2078a8c7372b60": {
+      "idempotencyKey": "1931db8820027971f9f31b61af0d7b6f2f13aaf7b54dd7ba9f2078a8c7372b60",
+      "savedAt": "2026-02-16T16:55:30.032Z",
+      "output": {
+        "bcp47": "ar",
+        "languageClass": "RTL",
+        "profile": {
+          "targetCPS": 12,
+          "maxCPS": 16,
+          "targetCPL": 28,
+          "maxCPL": 34,
+          "maxLines": 2,
+          "minDuration": 1.5,
+          "maxDuration": 5.5,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "1931db8820027971f9f31b61af0d7b6f2f13aaf7b54dd7ba9f2078a8c7372b60",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:01.775\nفي عام 2026 استخدمنا منفذ\n\n00:00:01.825 --> 00:00:03.600\nUSB-C لنقل البيانات بسرعة.\n\n00:00:04.000 --> 00:00:05.724\nثم عدنا إلى النص\n\n00:00:05.775 --> 00:00:07.500\nالعربي دون تغيير الاتجاه.\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 1.7750000000000001,
+            "text": "في عام 2026 استخدمنا منفذ"
+          },
+          {
+            "index": 1,
+            "start": 1.825,
+            "end": 3.6,
+            "text": "USB-C لنقل البيانات بسرعة."
+          },
+          {
+            "index": 2,
+            "start": 4,
+            "end": 5.725,
+            "text": "ثم عدنا إلى النص"
+          },
+          {
+            "index": 3,
+            "start": 5.775,
+            "end": 7.5,
+            "text": "العربي دون تغيير الاتجاه."
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": false,
+        "postProcessInputSha256": "91b4092c5e69a242f2e1fbe8a0a63d66ecfdd1fbd4e2034b59d439fca4c93411",
+        "whisperSegmentsSha256": "b4bc00fe443b74f6d991410bd057aee88511d7a33b58628daf0dfbe9b633b676",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "39bad39c486f1173cbc677af9ba694b80262a941fa61fd4c7fec4feac3272e9f": {
+      "idempotencyKey": "39bad39c486f1173cbc677af9ba694b80262a941fa61fd4c7fec4feac3272e9f",
+      "savedAt": "2026-02-16T16:55:37.704Z",
+      "output": {
+        "bcp47": "ja",
+        "languageClass": "CJK",
+        "profile": {
+          "targetCPS": 8,
+          "maxCPS": 11,
+          "targetCPL": 14,
+          "maxCPL": 18,
+          "maxLines": 1,
+          "minDuration": 1.2,
+          "maxDuration": 4.5,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "39bad39c486f1173cbc677af9ba694b80262a941fa61fd4c7fec4feac3272e9f",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.000\n字幕品質を確認する日本語テスト\n\n00:00:03.399 --> 00:00:06.500\n改行なしで読みやすさ維持\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3,
+            "text": "字幕品質を確認する日本語テスト"
+          },
+          {
+            "index": 1,
+            "start": 3.4,
+            "end": 6.5,
+            "text": "改行なしで読みやすさ維持"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 0,
+        "usedFallback": false,
+        "postProcessInputSha256": "61b551ab6d95fde50730ab9e34d7dc14c273d7ce95f9d39f49867a13470fa566",
+        "whisperSegmentsSha256": "c7d4c48bc02eaf2ac41552f3d19e9005a27afba29cf627e30bc537772e2477b5",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "ab541d736eeb9460399b932cbd86a892d611f696cfd25b07b43552abb9aea00c": {
+      "idempotencyKey": "ab541d736eeb9460399b932cbd86a892d611f696cfd25b07b43552abb9aea00c",
+      "savedAt": "2026-02-16T16:55:37.707Z",
+      "output": {
+        "bcp47": "ar",
+        "languageClass": "RTL",
+        "profile": {
+          "targetCPS": 12,
+          "maxCPS": 16,
+          "targetCPL": 28,
+          "maxCPL": 34,
+          "maxLines": 2,
+          "minDuration": 1.5,
+          "maxDuration": 5.5,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "ab541d736eeb9460399b932cbd86a892d611f696cfd25b07b43552abb9aea00c",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:03.449\nهذا اختبار لمصطلح Grace في\nسياق عربي.\n\n00:00:03.750 --> 00:00:07.049\nويجب أن يبقى الترتيب المنطقي\nللنص كما هو.\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 3.4499999999999997,
+            "text": "هذا اختبار لمصطلح Grace في\nسياق عربي."
+          },
+          {
+            "index": 1,
+            "start": 3.75,
+            "end": 7.05,
+            "text": "ويجب أن يبقى الترتيب المنطقي\nللنص كما هو."
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "073424efc08c2b0e1e22b388632963a91f6fad0575f51f20ce00297d14ea4659",
+        "whisperSegmentsSha256": "b9bc4271e876540f0f1a608e1b7c2ad68f88108d1a1bc694e99be01d9dfcf44b",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    },
+    "349e776dd7b991086d38b1cf63ec9ef109e83d170689422be2a1c0978ba9614f": {
+      "idempotencyKey": "349e776dd7b991086d38b1cf63ec9ef109e83d170689422be2a1c0978ba9614f",
+      "savedAt": "2026-02-16T16:55:37.708Z",
+      "output": {
+        "bcp47": "en",
+        "languageClass": "LTR",
+        "profile": {
+          "targetCPS": 13.5,
+          "maxCPS": 17,
+          "targetCPL": 32,
+          "maxCPL": 38,
+          "maxLines": 2,
+          "minDuration": 1.3,
+          "maxDuration": 6,
+          "startOffsetMs": 150,
+          "endOffsetMs": 50,
+          "minGapMs": 50,
+          "languageProfileVersion": "v1"
+        },
+        "idempotencyKey": "349e776dd7b991086d38b1cf63ec9ef109e83d170689422be2a1c0978ba9614f",
+        "cacheHit": false,
+        "subtitleOrigin": "ai-raw",
+        "subtitleOriginBefore": "ai-raw",
+        "subtitleOriginAfter": "ai-processed",
+        "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:01.850\n[Music]\n\n00:00:01.900 --> 00:00:04.049\n♪ Hallelujah ♪\n\n00:00:04.149 --> 00:00:06.149\n[Applause]\n\n",
+        "cues": [
+          {
+            "index": 0,
+            "start": 0,
+            "end": 1.85,
+            "text": "[Music]"
+          },
+          {
+            "index": 1,
+            "start": 1.9000000000000001,
+            "end": 4.05,
+            "text": "♪ Hallelujah ♪"
+          },
+          {
+            "index": 2,
+            "start": 4.1499999999999995,
+            "end": 6.1499999999999995,
+            "text": "[Applause]"
+          }
+        ],
+        "theologyIssues": [],
+        "validationErrors": [],
+        "aiRetryCount": 1,
+        "usedFallback": true,
+        "postProcessInputSha256": "b2c71eb5be247029be0bc42133e8574d6e2d9a63619a0fe8f719fe24d6843fda",
+        "whisperSegmentsSha256": "e80ab96798ba5ebc229769dea05c89c9d2b68eedd7a7a2a94690e64a0931f445",
+        "promptVersion": "v1",
+        "validatorVersion": "v1",
+        "fallbackVersion": "v1",
+        "skipped": false
+      }
+    }
+  }
+}

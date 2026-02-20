@@ -8,6 +8,7 @@ const BASE_STEPS: WorkflowStepName[] = [
   'metadata',
   'embeddings',
   'translation',
+  'subtitle_post_process',
   'voiceover',
   'artifact_upload',
   'mux_upload',
