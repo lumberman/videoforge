@@ -1,18 +1,30 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import type { UrlObject } from 'node:url';
+import { env } from '@/config/env';
 import { getJobById } from '@/data/job-store';
 import { formatStepName } from '@/lib/workflow-steps';
-import { LiveJobStepsTable } from '@/features/jobs/live-job-steps-table';
-import { getLanguageBadges } from '@/features/jobs/jobs-table-presenter';
+import { LiveJobDetailHeader } from '@/features/jobs/live-job-detail-header';
 import { fetchCoverageLanguages, resolveCoverageGatewayBaseUrl } from '@/services/coverage-gateway';
+import type { JobRecord } from '@/types/job';
 
 export const dynamic = 'force-dynamic';
+
+type SearchParamValue = string | string[] | undefined;
+
+type SearchParamsInput = {
+  languageId?: SearchParamValue;
+  languageIds?: SearchParamValue;
+};
 
 function formatDate(iso?: string): string {
   if (!iso) {
     return '–';
   }
+
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) {
     return '–';
@@ -26,46 +38,134 @@ function formatDate(iso?: string): string {
   }).format(parsed);
 }
 
-function formatCompletionDuration(startIso?: string, endIso?: string): string {
-  if (!startIso || !endIso) {
-    return '–';
+function getSingleSearchParam(value: SearchParamValue): string | null {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return null;
+}
+
+function parseRequestedLanguageIds(raw: SearchParamValue): string[] {
+  const scalar = getSingleSearchParam(raw);
+  if (!scalar) return [];
+  return [...new Set(scalar.split(',').map((value) => value.trim()).filter(Boolean))];
+}
+
+function sanitizeSegment(segment: string): string {
+  return segment.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+function selectPlaybackIdFromAsset(asset: unknown): string | null {
+  if (!asset || typeof asset !== 'object') {
+    return null;
   }
 
-  const startMs = Date.parse(startIso);
-  const endMs = Date.parse(endIso);
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
-    return '–';
+  const record = asset as { playback_ids?: Array<{ id?: string; policy?: string }> };
+  const playbackIds = Array.isArray(record.playback_ids) ? record.playback_ids : [];
+  if (playbackIds.length === 0) {
+    return null;
   }
 
-  const totalSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
-  if (totalSeconds < 60) {
-    return `Completed in ${totalSeconds}s`;
+  for (const entry of playbackIds) {
+    const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
+    const policy = typeof entry?.policy === 'string' ? entry.policy.trim().toLowerCase() : '';
+    if (id && policy === 'public') {
+      return id;
+    }
   }
 
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  if (minutes < 60) {
-    return seconds > 0 ? `Completed in ${minutes}m ${seconds}s` : `Completed in ${minutes}m`;
+  for (const entry of playbackIds) {
+    const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
+    if (id) {
+      return id;
+    }
   }
 
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0
-    ? `Completed in ${hours}h ${remainingMinutes}m`
-    : `Completed in ${hours}h`;
+  return null;
+}
+
+async function readPlaybackIdFromMuxUploadArtifact(job: JobRecord): Promise<string | null> {
+  if (!job.artifacts.muxUpload) {
+    return null;
+  }
+
+  const safeJobId = sanitizeSegment(job.id);
+  const artifactPath = path.resolve(env.artifactRootPath, safeJobId, 'mux-upload.json');
+  try {
+    const raw = await readFile(artifactPath, 'utf8');
+    const parsed = JSON.parse(raw) as { playbackId?: unknown };
+    const playbackId =
+      typeof parsed.playbackId === 'string' ? parsed.playbackId.trim() : '';
+    return playbackId || null;
+  } catch {
+    return null;
+  }
+}
+
+async function readPlaybackIdFromMuxAsset(job: JobRecord): Promise<string | null> {
+  const tokenId = env.muxTokenId.trim();
+  const tokenSecret = env.muxTokenSecret.trim();
+  if (!tokenId || !tokenSecret) {
+    return null;
+  }
+
+  try {
+    const auth = Buffer.from(`${tokenId}:${tokenSecret}`).toString('base64');
+    const response = await fetch(
+      `https://api.mux.com/video/v1/assets/${encodeURIComponent(job.muxAssetId)}`,
+      {
+        method: 'GET',
+        headers: {
+          authorization: `Basic ${auth}`
+        },
+        cache: 'no-store'
+      }
+    );
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as { data?: unknown };
+    return selectPlaybackIdFromAsset(payload.data);
+  } catch {
+    return null;
+  }
+}
+
+async function resolveMuxPlaybackId(job: JobRecord): Promise<string | null> {
+  const fromArtifact = await readPlaybackIdFromMuxUploadArtifact(job);
+  if (fromArtifact) {
+    return fromArtifact;
+  }
+
+  return readPlaybackIdFromMuxAsset(job);
 }
 
 export default async function JobDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<SearchParamsInput>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const requestedLanguageIds = parseRequestedLanguageIds(
+    resolvedSearchParams?.languageIds ?? resolvedSearchParams?.languageId
+  );
+  const sharedQuery =
+    requestedLanguageIds.length > 0
+      ? { languageId: requestedLanguageIds.join(',') }
+      : undefined;
+  const coverageReportHref: UrlObject = { pathname: '/dashboard/coverage', query: sharedQuery };
+  const jobsQueueHref: UrlObject = { pathname: '/jobs', query: sharedQuery };
+
   const { id } = await params;
   const job = await getJobById(id);
 
   if (!job) {
     notFound();
   }
+
+  const muxPlaybackId = await resolveMuxPlaybackId(job);
 
   const languageLabelsById: Record<string, string> = {};
   const coverageBaseUrl = resolveCoverageGatewayBaseUrl();
@@ -79,14 +179,12 @@ export default async function JobDetailPage({
       // Keep rendering page even when language labels are unavailable.
     }
   }
-  const languageBadges = getLanguageBadges(job, new Map<string, string>(Object.entries(languageLabelsById)));
-
   return (
     <main className="jobs-main">
       <div className="report-shell jobs-report-shell">
         <header className="report-header jobs-header">
           <div className="header-brand">
-            <Link href="/dashboard/coverage" aria-label="Go to coverage report">
+            <Link href={coverageReportHref} aria-label="Go to coverage report">
               <img
                 src="/jesusfilm-sign.svg"
                 alt="Jesus Film Project"
@@ -101,7 +199,7 @@ export default async function JobDetailPage({
                 <div className="report-control report-control--text">
                   <span className="control-value control-value--static">Job Details</span>
                 </div>
-                <Link href="/jobs" className="header-nav-link jobs-back-link">
+                <Link href={jobsQueueHref} className="header-nav-link jobs-back-link">
                   <span className="header-nav-link-icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" role="presentation" focusable="false">
                       <path d="M8 3L3 8l5 5M4 8h9" />
@@ -114,7 +212,7 @@ export default async function JobDetailPage({
           </div>
           <div className="header-diagram">
             <div className="header-diagram-menu header-nav-tabs">
-              <Link href="/dashboard/coverage" className="header-nav-link">
+              <Link href={coverageReportHref} className="header-nav-link">
                 <span className="header-nav-link-icon" aria-hidden="true">
                   <svg viewBox="0 0 16 16" role="presentation" focusable="false">
                     <path d="M1.5 8c1.8-3 4-4.5 6.5-4.5S12.7 5 14.5 8c-1.8 3-4 4.5-6.5 4.5S3.3 11 1.5 8z" />
@@ -123,7 +221,7 @@ export default async function JobDetailPage({
                 </span>
                 <span>Report</span>
               </Link>
-              <Link href="/jobs" className="header-nav-link is-active" aria-current="page">
+              <Link href={jobsQueueHref} className="header-nav-link is-active" aria-current="page">
                 <span className="header-nav-link-icon" aria-hidden="true">
                   <svg viewBox="0 0 16 16" role="presentation" focusable="false">
                     <path d="M3 4h6M3 8h10M3 12h8" />
@@ -135,53 +233,10 @@ export default async function JobDetailPage({
           </div>
         </header>
 
-        <section className="collection-card jobs-card jobs-summary-card">
-          <div className="grid cols-2 jobs-detail-grid">
-            <div>
-              <div className="small">Status</div>
-              <div className="jobs-summary-status-row">
-                <span className={`badge ${job.status} jobs-summary-status-badge`}>{job.status}</span>
-                <span className="jobs-summary-retries-pill" title={`Retries: ${job.retries}`}>
-                  {job.retries} retries
-                </span>
-                {job.errors.length > 0 ? (
-                  <a href="#error-log" className="jobs-error-log-link">
-                    Error log
-                  </a>
-                ) : null}
-              </div>
-            </div>
-            <div>
-              <div className="small">Created</div>
-              <div>{formatDate(job.createdAt)}</div>
-            </div>
-            <div>
-              <div className="small">Completed</div>
-              <div>{formatCompletionDuration(job.createdAt, job.completedAt)}</div>
-            </div>
-            <div>
-              <div className="small">Languages</div>
-              {languageBadges.length > 0 ? (
-                <div
-                  className="jobs-language-badges"
-                  title={languageBadges.map((badge) => badge.text).join(', ')}
-                >
-                  {languageBadges.map((badge) => (
-                    <span key={`${job.id}-${badge.key}`} className="jobs-language-badge">
-                      {badge.text}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <span className="jobs-no-issue">none</span>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <LiveJobStepsTable
+        <LiveJobDetailHeader
           initialJob={job}
-          headingMeta={<code className="jobs-step-job-id">{job.id}</code>}
+          languageLabelsById={languageLabelsById}
+          muxPlaybackId={muxPlaybackId}
         />
 
         <section className="collection-card jobs-card jobs-error-card" id="error-log">

@@ -501,9 +501,12 @@ test('mux adapter requests subtitle generation and retries primitive transcript 
                 throw new Error('No transcript track found for playback id');
               }
               return {
-                transcriptText: 'primitive recovered transcript',
+                transcriptText: 'WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nprimitive recovered transcript',
                 track: { language_code: 'en' }
               };
+            },
+            async parseVTTCues() {
+              return [{ startTime: 0, endTime: 2, text: 'primitive recovered transcript' }];
             }
           };
         }
@@ -526,6 +529,250 @@ test('mux adapter requests subtitle generation and retries primitive transcript 
         assert.equal(transcript.text, 'primitive recovered transcript');
         assert.equal(generateRequestCount, 1);
         assert.equal(transcriptFetchCount, 2);
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter preserves VTT cue segmentation from primitive transcript fetch results', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+      let assetFetchCount = 0;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          assetFetchCount += 1;
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [{ id: 'text-track-1', type: 'text', status: 'ready', language_code: 'en' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset(
+              _asset: unknown,
+              _playbackId: string,
+              options: { required?: boolean; cleanTranscript?: boolean } = {}
+            ) {
+              assert.equal(options.required, true);
+              assert.equal(options.cleanTranscript, false);
+              return {
+                transcriptText:
+                  'WEBVTT\n\n00:00:00.000 --> 00:00:04.250\nHello there\n\n00:00:04.250 --> 00:00:08.000\nGeneral Kenobi',
+                track: { language_code: 'en' }
+              };
+            },
+            async parseVTTCues() {
+              return [
+                { startTime: 0, endTime: 4.25, text: 'Hello there' },
+                { startTime: 4.25, endTime: 8, text: 'General Kenobi' }
+              ];
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        const transcript = await muxAiModule.transcribeWithMuxAi('mux-asset-vtt-segments');
+        assert.equal(assetFetchCount, 1);
+        assert.equal(transcript.language, 'en');
+        assert.equal(transcript.text, 'Hello there General Kenobi');
+        assert.equal(transcript.segments.length, 2);
+        assert.deepEqual(transcript.segments[0], {
+          startSec: 0,
+          endSec: 4.25,
+          text: 'Hello there'
+        });
+        assert.deepEqual(transcript.segments[1], {
+          startSec: 4.25,
+          endSec: 8,
+          text: 'General Kenobi'
+        });
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter fails when primitive transcript parsing export is unavailable', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [{ id: 'text-track-1', type: 'text', status: 'ready', language_code: 'en' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              return {
+                transcriptText: 'WEBVTT\n\n00:00:00.000 --> 00:00:04.250\nHello there',
+                track: { language_code: 'en' }
+              };
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-no-parse-vtt'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
+            assert.match(error.message, /parseVTTCues export is required/i);
+            return true;
+          }
+        );
+      } finally {
+        globalThis.fetch = originalFetch;
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
+test('mux adapter does not fall back to workflow transcription when primitive transcript cues are invalid', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: 'mux-token-id',
+      MUX_TOKEN_SECRET: 'mux-token-secret'
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      const originalFetch = globalThis.fetch;
+
+      globalThis.fetch = async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : String(input.url);
+
+        if (url.includes('https://api.mux.com/video/v1/assets/')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                playback_ids: [{ id: 'public-playback-id', policy: 'public' }],
+                tracks: [{ id: 'text-track-1', type: 'text', status: 'ready', language_code: 'en' }]
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' }
+            }
+          );
+        }
+
+        throw new Error(`Unexpected fetch call in test: ${url}`);
+      };
+
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async fetchTranscriptForAsset() {
+              return {
+                transcriptText: 'WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHello',
+                track: { language_code: 'en' }
+              };
+            },
+            async parseVTTCues() {
+              return [{ startTime: 0, endTime: 1, text: '' }];
+            }
+          };
+        }
+
+        if (moduleName === '@mux/ai/workflows') {
+          return {
+            async transcribe() {
+              return {
+                language: 'en',
+                text: 'workflow transcript',
+                segments: [{ startSec: 0, endSec: 1, text: 'workflow transcript' }]
+              };
+            }
+          };
+        }
+
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-invalid-cues-no-workflow-fallback'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_OPERATION_FAILED');
+            assert.match(error.message, /parseVTTCues returned no transcript cues/i);
+            return true;
+          }
+        );
       } finally {
         globalThis.fetch = originalFetch;
         muxAiModule.setMuxAiModuleImporterForTests();
@@ -762,9 +1009,12 @@ test('mux adapter polls existing preparing text track without requesting subtitl
                 throw new Error('No transcript track found for playback id');
               }
               return {
-                transcriptText: 'polled transcript',
+                transcriptText: 'WEBVTT\n\n00:00:00.000 --> 00:00:03.000\npolled transcript',
                 track: { language_code: 'en' }
               };
+            },
+            async parseVTTCues() {
+              return [{ startTime: 0, endTime: 3, text: 'polled transcript' }];
             }
           };
         }

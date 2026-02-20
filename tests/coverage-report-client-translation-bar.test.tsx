@@ -3,6 +3,7 @@ import test from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
+  buildCoverageUrlWithStoredLanguageSelection,
   buildUnselectableVideoSubmitError,
   buildCoverageUrlWithoutRefresh,
   buildCoverageSubmitFeedback,
@@ -161,6 +162,39 @@ test('buildCoverageUrlWithoutRefresh strips one-shot refresh query param', () =>
   );
   assert.equal(
     buildCoverageUrlWithoutRefresh('https://app.test/dashboard/coverage?languageId=529'),
+    null
+  );
+});
+
+test('buildCoverageUrlWithStoredLanguageSelection restores languageId when query is missing', () => {
+  assert.equal(
+    buildCoverageUrlWithStoredLanguageSelection({
+      currentHref: 'https://app.test/dashboard/coverage?from=jobs',
+      storedLanguageIds: ['6414', '529'],
+      availableLanguageIds: ['529', '6414', '3904']
+    }),
+    '/dashboard/coverage?from=jobs&languageId=6414%2C529'
+  );
+});
+
+test('buildCoverageUrlWithStoredLanguageSelection skips restore when language query exists', () => {
+  assert.equal(
+    buildCoverageUrlWithStoredLanguageSelection({
+      currentHref: 'https://app.test/dashboard/coverage?languageId=3904',
+      storedLanguageIds: ['6414'],
+      availableLanguageIds: ['3904', '6414']
+    }),
+    null
+  );
+});
+
+test('buildCoverageUrlWithStoredLanguageSelection skips invalid stored ids', () => {
+  assert.equal(
+    buildCoverageUrlWithStoredLanguageSelection({
+      currentHref: 'https://app.test/dashboard/coverage',
+      storedLanguageIds: ['unknown'],
+      availableLanguageIds: ['3904']
+    }),
     null
   );
 });

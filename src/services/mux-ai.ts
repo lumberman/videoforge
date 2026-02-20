@@ -3,6 +3,7 @@ import type {
   EmbeddingVector,
   MetadataResult,
   Transcript,
+  TranscriptSegment,
   TranslationResult
 } from '@/types/enrichment';
 
@@ -333,6 +334,19 @@ function canFallbackFromOptionalError(error: MuxAiError): boolean {
   return isMissingExportError(error) || error.code === 'MUX_AI_INVALID_RESPONSE';
 }
 
+function isFatalPrimitiveTranscriptQualityError(error: MuxAiError): boolean {
+  if (error.code !== 'MUX_AI_OPERATION_FAILED') {
+    return false;
+  }
+
+  return (
+    /parseVTTCues export is required/i.test(error.message) ||
+    /parseVTTCues threw an exception/i.test(error.message) ||
+    /parseVTTCues returned an invalid cue array/i.test(error.message) ||
+    /parseVTTCues returned no transcript cues/i.test(error.message)
+  );
+}
+
 async function callMuxFn<T>(opts: {
   moduleRef: UnknownModule;
   operation: string;
@@ -452,6 +466,12 @@ type PrimitiveTranscriptFetchResult = {
   track?: { language_code?: string };
 };
 
+type PrimitiveVttCue = {
+  startTime: number;
+  endTime: number;
+  text: string;
+};
+
 type WorkflowChaptersResult = {
   chapters: Array<{ title: string; startTime: number }>;
 };
@@ -560,6 +580,97 @@ function toPlainTextFromVtt(vtt: string): string {
     )
     .join(' ')
     .trim();
+}
+
+function normalizeCueText(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function mapVttCuesToTranscriptSegments(cues: PrimitiveVttCue[]): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+  for (const cue of cues) {
+    const text = normalizeCueText(cue.text);
+    if (!text) {
+      continue;
+    }
+
+    const start = Number.isFinite(cue.startTime) ? Math.max(0, cue.startTime) : 0;
+    const endCandidate = Number.isFinite(cue.endTime) ? cue.endTime : start;
+    const end = Math.max(start + 0.001, endCandidate);
+
+    segments.push({
+      startSec: start,
+      endSec: end,
+      text
+    });
+  }
+
+  return segments.sort((first, second) => first.startSec - second.startSec);
+}
+
+function isPrimitiveVttCueArray(value: unknown): value is PrimitiveVttCue[] {
+  return (
+    Array.isArray(value) &&
+    value.every((cue) => {
+      if (!cue || typeof cue !== 'object') {
+        return false;
+      }
+      const record = cue as Partial<PrimitiveVttCue>;
+      return (
+        typeof record.startTime === 'number' &&
+        typeof record.endTime === 'number' &&
+        typeof record.text === 'string'
+      );
+    })
+  );
+}
+
+async function extractTranscriptSegmentsFromRawVtt(
+  primitives: UnknownModule,
+  rawVtt: string,
+  muxAssetId: string
+): Promise<TranscriptSegment[]> {
+  const parseVTTCues = getFunction(primitives, ['parseVTTCues']);
+  if (!parseVTTCues) {
+    throw toOperationFailed(
+      'primitives transcription',
+      `parseVTTCues export is required to preserve transcript segmentation for asset ${muxAssetId}`
+    );
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = await Promise.resolve(parseVTTCues(rawVtt));
+  } catch (error) {
+    const causeMessage = getImportFailureMessage(error);
+    throw toOperationFailed(
+      'primitives transcription',
+      causeMessage
+        ? `parseVTTCues threw an exception: ${causeMessage}`
+        : `parseVTTCues threw an exception for asset ${muxAssetId}`,
+      error
+    );
+  }
+
+  if (!isPrimitiveVttCueArray(parsed)) {
+    throw toOperationFailed(
+      'primitives transcription',
+      `parseVTTCues returned an invalid cue array for asset ${muxAssetId}`
+    );
+  }
+
+  const segments = mapVttCuesToTranscriptSegments(parsed);
+  if (segments.length === 0) {
+    throw toOperationFailed(
+      'primitives transcription',
+      `parseVTTCues returned no transcript cues for asset ${muxAssetId}`
+    );
+  }
+
+  return segments;
 }
 
 function isPrimitiveTranscriptFetchResult(value: unknown): value is PrimitiveTranscriptFetchResult {
@@ -1103,7 +1214,10 @@ async function transcribeWithPrimitiveFetch(
 
   let transcriptResponse: unknown;
   try {
-    transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, { required: true });
+    transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, {
+      required: true,
+      cleanTranscript: false
+    });
   } catch (error) {
     const causeMessage = getImportFailureMessage(error);
     const isMissingTrack = causeMessage
@@ -1122,7 +1236,10 @@ async function transcribeWithPrimitiveFetch(
     try {
       asset = await ensureTranscriptTrackAvailable(muxAssetId, asset, null);
       playbackId = getPlaybackIdFromAsset(asset) ?? playbackId;
-      transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, { required: true });
+      transcriptResponse = await fetchTranscriptForAsset(asset, playbackId, {
+        required: true,
+        cleanTranscript: false
+      });
     } catch (recoveryError) {
       if (isMuxAiError(recoveryError)) {
         throw recoveryError;
@@ -1142,7 +1259,20 @@ async function transcribeWithPrimitiveFetch(
     throw toInvalidResponse('primitives transcription');
   }
 
-  const text = transcriptResponse.transcriptText.trim();
+  const rawTranscript = transcriptResponse.transcriptText.trim();
+  if (!rawTranscript) {
+    throw toOperationFailed(
+      'primitives transcription',
+      `fetchTranscriptForAsset returned empty transcript text for asset ${muxAssetId}`
+    );
+  }
+
+  const segments = await extractTranscriptSegmentsFromRawVtt(
+    primitives,
+    rawTranscript,
+    muxAssetId
+  );
+  const text = segments.map((segment) => segment.text).join(' ').trim();
   if (!text) {
     throw toOperationFailed(
       'primitives transcription',
@@ -1158,13 +1288,7 @@ async function transcribeWithPrimitiveFetch(
   return {
     language,
     text,
-    segments: [
-      {
-        startSec: 0,
-        endSec: computeTranscriptDuration(text),
-        text
-      }
-    ]
+    segments
   };
 }
 
@@ -1192,6 +1316,9 @@ export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcrip
       console.warn(
         `[mux-ai][optional-fallback] operation="primitives transcription fetch" code="${error.code}" message="${error.message}"`
       );
+      if (isFatalPrimitiveTranscriptQualityError(error)) {
+        throw error;
+      }
     } else {
       throw error;
     }

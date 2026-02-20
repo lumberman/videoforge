@@ -24,6 +24,7 @@ type RunPollOptions = {
 type LiveJobStepsTableProps = {
   initialJob: JobRecord;
   headingMeta?: React.ReactNode;
+  onJobUpdate?: (job: JobRecord) => void;
 };
 
 function isTerminalJobStatus(status: JobRecord['status']): boolean {
@@ -162,7 +163,7 @@ function StepStatusGlyph({ status }: { status: StepStatus }) {
   );
 }
 
-export function LiveJobStepsTable({ initialJob, headingMeta }: LiveJobStepsTableProps) {
+export function LiveJobStepsTable({ initialJob, headingMeta, onJobUpdate }: LiveJobStepsTableProps) {
   const [job, setJob] = useState(initialJob);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPollingError, setIsPollingError] = useState(false);
@@ -226,6 +227,7 @@ export function LiveJobStepsTable({ initialJob, headingMeta }: LiveJobStepsTable
           })
         ) {
           setJob(payload);
+          onJobUpdate?.(payload);
           latestStatusRef.current = payload.status;
           setIsPollingError(false);
           setLastUpdatedAt(new Date().toISOString());
@@ -255,7 +257,7 @@ export function LiveJobStepsTable({ initialJob, headingMeta }: LiveJobStepsTable
       clearScheduledPoll();
       activeControllerRef.current?.abort();
     };
-  }, [initialJob.id]);
+  }, [initialJob.id, onJobUpdate]);
 
   const handleRefreshNow = useCallback(() => {
     const runPoll = runPollRef.current;

@@ -1,8 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
+import type { UrlObject } from 'node:url';
 import { listJobs } from '@/data/job-store';
 import { getRuntimeWarnings } from '@/config/env';
-import { NewJobForm } from './new-job-form';
 import { fetchCoverageLanguages, resolveCoverageGatewayBaseUrl } from '@/services/coverage-gateway';
 import { LiveJobsTable } from '@/features/jobs/live-jobs-table';
 
@@ -61,9 +61,25 @@ function parseCoverageQueueFlash(searchParams: SearchParamsInput): CoverageQueue
   return { created, failed, skipped };
 }
 
+function parseRequestedLanguageIds(raw: SearchParamValue): string[] {
+  const scalar = getSingleSearchParam(raw);
+  if (!scalar) return [];
+  return [...new Set(scalar.split(',').map((value) => value.trim()).filter(Boolean))];
+}
+
 export default async function JobsPage({ searchParams }: PageProps) {
   const normalizedSearchParams = await resolveSearchParams(searchParams);
   const coverageQueueFlash = parseCoverageQueueFlash(normalizedSearchParams);
+  const requestedLanguageIds = parseRequestedLanguageIds(
+    normalizedSearchParams.languageIds ?? normalizedSearchParams.languageId
+  );
+  const coverageReportHref: UrlObject = {
+    pathname: '/dashboard/coverage',
+    query:
+      requestedLanguageIds.length > 0
+        ? { languageId: requestedLanguageIds.join(',') }
+        : undefined
+  };
   const jobs = await listJobs();
   const languageLabelsById: Record<string, string> = {};
   const coverageBaseUrl = resolveCoverageGatewayBaseUrl();
@@ -84,7 +100,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
       <div className="report-shell jobs-report-shell">
         <header className="report-header jobs-header">
           <div className="header-brand">
-            <Link href="/dashboard/coverage" aria-label="Go to coverage report">
+            <Link href={coverageReportHref} aria-label="Go to coverage report">
               <img
                 src="/jesusfilm-sign.svg"
                 alt="Jesus Film Project"
@@ -104,7 +120,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           </div>
           <div className="header-diagram">
             <div className="header-diagram-menu header-nav-tabs">
-              <Link href="/dashboard/coverage" className="header-nav-link">
+              <Link href={coverageReportHref} className="header-nav-link">
                 <span className="header-nav-link-icon" aria-hidden="true">
                   <svg viewBox="0 0 16 16" role="presentation" focusable="false">
                     <path d="M1.5 8c1.8-3 4-4.5 6.5-4.5S12.7 5 14.5 8c-1.8 3-4 4.5-6.5 4.5S3.3 11 1.5 8z" />
@@ -145,8 +161,6 @@ export default async function JobsPage({ searchParams }: PageProps) {
             </p>
           </section>
         )}
-
-        <NewJobForm />
 
         <LiveJobsTable initialJobs={jobs} languageLabelsById={languageLabelsById} />
       </div>

@@ -27,6 +27,7 @@ const LANGUAGE_FLAG_BY_CODE: Record<string, string> = {
   no: '🇳🇴',
   pl: '🇵🇱',
   pt: '🇧🇷',
+  ro: '🇷🇴',
   ru: '🇷🇺',
   sv: '🇸🇪',
   th: '🇹🇭',
@@ -106,7 +107,10 @@ function normalizeLanguageLabel(
   const clean = value.trim();
   if (!clean) return '';
 
-  const resolvedLabel = languageLabelsById.get(clean);
+  const resolvedLabel =
+    languageLabelsById.get(clean) ??
+    languageLabelsById.get(clean.toLowerCase()) ??
+    languageLabelsById.get(clean.toUpperCase());
   if (resolvedLabel) return resolvedLabel;
   if (/^[a-z]{2,3}(-[a-z]{2})?$/i.test(clean)) {
     return clean.split('-')[0].toUpperCase();
@@ -141,6 +145,7 @@ function inferLanguageCode(rawValue: string, label: string): string | null {
   if (normalizedLabel.includes('norwegian')) return 'no';
   if (normalizedLabel.includes('polish')) return 'pl';
   if (normalizedLabel.includes('portuguese')) return 'pt';
+  if (normalizedLabel.includes('romanian')) return 'ro';
   if (normalizedLabel.includes('russian')) return 'ru';
   if (normalizedLabel.includes('spanish')) return 'es';
   if (normalizedLabel.includes('swedish')) return 'sv';
@@ -155,9 +160,10 @@ export function getLanguageBadges(
   job: JobRecord,
   languageLabelsById: ReadonlyMap<string, string>
 ): LanguageBadge[] {
-  const source = job.requestedLanguageAbbreviations?.length
-    ? job.requestedLanguageAbbreviations
-    : job.languages;
+  const source = [
+    ...job.languages,
+    ...(job.requestedLanguageAbbreviations ?? [])
+  ];
   const badges: LanguageBadge[] = [];
   const seen = new Set<string>();
 
@@ -167,8 +173,9 @@ export function getLanguageBadges(
     const code = inferLanguageCode(value, label);
     const flag = code ? LANGUAGE_FLAG_BY_CODE[code] : '';
     const key = label.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const dedupeKey = code ? `code:${code}` : `label:${key}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
     badges.push({
       key,
       text: flag ? `${flag} ${label}` : label

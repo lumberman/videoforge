@@ -74,6 +74,29 @@ test('getLanguageBadges resolves labels and deduplicates', () => {
   assert.match(badges[1]?.text ?? '', /French/i);
 });
 
+test('getLanguageBadges prefers language ids over abbreviations for display', () => {
+  const job = createJob({
+    languages: ['ro'],
+    requestedLanguageAbbreviations: ['ROM']
+  });
+  const labels = new Map<string, string>([['ro', 'Romanian']]);
+
+  const badges = getLanguageBadges(job, labels);
+  assert.equal(badges.length, 1);
+  assert.equal(badges[0]?.text, '🇷🇴 Romanian');
+});
+
+test('getLanguageBadges resolves uppercase language ids via label map', () => {
+  const job = createJob({
+    languages: ['RO']
+  });
+  const labels = new Map<string, string>([['ro', 'Romanian']]);
+
+  const badges = getLanguageBadges(job, labels);
+  assert.equal(badges.length, 1);
+  assert.equal(badges[0]?.text, '🇷🇴 Romanian');
+});
+
 test('getSourceTitle falls back from collection to media to untitled', () => {
   assert.equal(
     getSourceTitle(createJob({ sourceCollectionTitle: 'Collection A', sourceMediaTitle: 'Media A' })),

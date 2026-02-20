@@ -81,3 +81,21 @@ test('jobs page ignores malformed coverage flash params', async () => {
     assert.doesNotMatch(html, /Coverage submission complete/i);
   });
 });
+
+test('jobs page preserves selected language ids in report links', async () => {
+  await withTempDataEnv('dashboard-jobs-language-links', async () => {
+    const pageModule = await importFresh<typeof import('../src/app/dashboard/jobs/page')>(
+      '../src/app/dashboard/jobs/page'
+    );
+
+    const html = renderToStaticMarkup(
+      await pageModule.default({
+        searchParams: Promise.resolve({
+          languageId: 'ro,fr'
+        })
+      })
+    );
+
+    assert.match(html, /href=\"\/dashboard\/coverage\?languageId=ro%2Cfr\"/i);
+  });
+});

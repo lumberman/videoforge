@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { UrlObject } from 'node:url';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
@@ -187,6 +188,7 @@ const VIDEO_LABEL_DISPLAY: Record<string, string> = {
 
 const SESSION_MODE_KEY = 'ai-media-coverage-mode'
 const SESSION_REPORT_KEY = 'ai-media-coverage-report'
+const SESSION_LANGUAGE_IDS_KEY = 'ai-media-coverage-language-ids'
 const COLLECTIONS_PER_BATCH = 200
 
 export function buildCoverageUrlWithoutRefresh(currentHref: string): string | null {
@@ -196,6 +198,37 @@ export function buildCoverageUrlWithoutRefresh(currentHref: string): string | nu
   }
 
   currentUrl.searchParams.delete('refresh')
+  const query = currentUrl.searchParams.toString()
+  return `${currentUrl.pathname}${query ? `?${query}` : ''}${currentUrl.hash}`
+}
+
+export function buildCoverageUrlWithStoredLanguageSelection(input: {
+  currentHref: string
+  storedLanguageIds: string[]
+  availableLanguageIds: string[]
+}): string | null {
+  const currentUrl = new URL(input.currentHref)
+  const hasLanguageParam =
+    currentUrl.searchParams.has('languageId') ||
+    currentUrl.searchParams.has('languageIds')
+  if (hasLanguageParam) {
+    return null
+  }
+
+  const availableSet = new Set(
+    input.availableLanguageIds.map((value) => value.trim()).filter(Boolean)
+  )
+  const restoreLanguageIds = [
+    ...new Set(
+      input.storedLanguageIds.map((value) => value.trim()).filter(Boolean)
+    )
+  ].filter((id) => availableSet.has(id))
+
+  if (restoreLanguageIds.length === 0) {
+    return null
+  }
+
+  currentUrl.searchParams.set('languageId', restoreLanguageIds.join(','))
   const query = currentUrl.searchParams.toString()
   return `${currentUrl.pathname}${query ? `?${query}` : ''}${currentUrl.hash}`
 }
@@ -1647,6 +1680,40 @@ export function CoverageReportClient({
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const storedRaw = window.sessionStorage.getItem(SESSION_LANGUAGE_IDS_KEY) ?? ''
+    const storedLanguageIds = storedRaw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+    const availableLanguageIds = languageOptions.map((language) => language.id)
+    const restoreUrl = buildCoverageUrlWithStoredLanguageSelection({
+      currentHref: window.location.href,
+      storedLanguageIds,
+      availableLanguageIds
+    })
+    if (restoreUrl) {
+      window.location.replace(restoreUrl)
+      return
+    }
+
+    const normalizedSelectedLanguageIds = [
+      ...new Set(selectedLanguageIds.map((value) => value.trim()).filter(Boolean))
+    ]
+    if (normalizedSelectedLanguageIds.length === 0) {
+      return
+    }
+
+    window.sessionStorage.setItem(
+      SESSION_LANGUAGE_IDS_KEY,
+      normalizedSelectedLanguageIds.join(',')
+    )
+  }, [languageOptions, selectedLanguageIds])
+
+  useEffect(() => {
     return () => {
       if (loadMoreTimeoutRef.current) {
         window.clearTimeout(loadMoreTimeoutRef.current)
@@ -1720,6 +1787,16 @@ export function CoverageReportClient({
     selectedLabels.length === 0
       ? [languageOptions[0]?.englishLabel ?? 'Unknown']
       : selectedLabels
+  const jobsHref = useMemo<UrlObject>(() => {
+    if (selectedLanguageIds.length === 0) {
+      return { pathname: '/jobs' }
+    }
+
+    return {
+      pathname: '/jobs',
+      query: { languageId: selectedLanguageIds.join(',') }
+    }
+  }, [selectedLanguageIds])
 
   const languageAbbreviationsById = useMemo<Record<string, string>>(() => {
     const entries = languageOptions.map((option) => [
@@ -2091,7 +2168,7 @@ export function CoverageReportClient({
               </span>
               <span>Report</span>
             </Link>
-            <Link href="/jobs" className="header-nav-link">
+            <Link href={jobsHref} className="header-nav-link">
               <span className="header-nav-link-icon" aria-hidden="true">
                 <svg viewBox="0 0 16 16" role="presentation" focusable="false">
                   <path d="M3 4h6M3 8h10M3 12h8" />

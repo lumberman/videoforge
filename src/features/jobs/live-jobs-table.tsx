@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { formatStepName } from '@/lib/workflow-steps';
 import type { JobRecord } from '@/types/job';
@@ -36,6 +37,7 @@ function shouldIgnoreRowNavigation(target: EventTarget | null, rowElement: HTMLE
 }
 
 export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTableProps) {
+  const searchParams = useSearchParams();
   const [jobs, setJobs] = useState(initialJobs);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPollingError, setIsPollingError] = useState(false);
@@ -51,6 +53,17 @@ export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTable
     [languageLabelsById]
   );
   const groupedJobs = useMemo(() => groupJobsByDay(jobs), [jobs]);
+  const jobsDetailQuerySuffix = useMemo(() => {
+    const rawLanguageIds =
+      searchParams?.get('languageIds') ?? searchParams?.get('languageId') ?? '';
+    const normalizedLanguageIds = [
+      ...new Set(rawLanguageIds.split(',').map((value) => value.trim()).filter(Boolean))
+    ];
+    if (normalizedLanguageIds.length === 0) {
+      return '';
+    }
+    return `?languageId=${encodeURIComponent(normalizedLanguageIds.join(','))}`;
+  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,13 +217,13 @@ export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTable
                             className={`jobs-clickable-row${latestError ? ' jobs-row-with-issue' : ''}`}
                             onClick={(event) => {
                               if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) return;
-                              window.location.assign(`/jobs/${job.id}`);
+                              window.location.assign(`/jobs/${job.id}${jobsDetailQuerySuffix}`);
                             }}
                             onKeyDown={(event) => {
                               if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) return;
                               if (event.key !== 'Enter' && event.key !== ' ') return;
                               event.preventDefault();
-                              window.location.assign(`/jobs/${job.id}`);
+                              window.location.assign(`/jobs/${job.id}${jobsDetailQuerySuffix}`);
                             }}
                             tabIndex={0}
                             role="link"
@@ -260,7 +273,10 @@ export function LiveJobsTable({ initialJobs, languageLabelsById }: LiveJobsTable
                                 <p className={`jobs-progress-summary jobs-progress-summary-${job.status}`}>
                                   {getProgressSummary(job)}
                                 </p>
-                                <Link href={`/jobs/${job.id}`} className="jobs-open-link">
+                                <Link
+                                  href={`/jobs/${job.id}${jobsDetailQuerySuffix}`}
+                                  className="jobs-open-link"
+                                >
                                   Open
                                 </Link>
                               </div>
