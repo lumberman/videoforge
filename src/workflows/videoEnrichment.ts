@@ -373,19 +373,13 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
         );
       }
     }
-    const primitiveVtt = primitivePreprocess.vtt?.trim();
-    if (!primitiveVtt) {
-      throw new Error(
-        'Mux primitives preprocessing did not return structured transcript VTT.'
-      );
-    }
 
     const transcriptUrl = await storeJsonArtifact(jobId, 'transcript.json', transcript);
     let vttUrl = await runStep({
       jobId,
       step: 'structured_transcript',
       world,
-      task: async () => storeTextArtifact(jobId, 'subtitles.vtt', primitiveVtt)
+      task: async () => storeTextArtifact(jobId, 'subtitles.vtt', primitivePreprocess.vtt)
     });
 
     const chapters = await runStep({

@@ -52,7 +52,7 @@ export interface MuxAiPreprocessWarning {
 }
 
 export interface MuxAiPreprocessResult {
-  vtt?: string;
+  vtt: string;
   storyboard?: Record<string, unknown> | unknown[];
   chunks?: unknown[];
   warnings: MuxAiPreprocessWarning[];
@@ -737,6 +737,9 @@ type MuxTextTrackStatus = 'ready' | 'preparing' | 'errored';
 
 const DEFAULT_SUBTITLE_POLL_INTERVAL_MS = 2_000;
 const DEFAULT_SUBTITLE_POLL_MAX_ATTEMPTS = 30;
+const MAX_TRANSCRIPT_SEGMENT_DURATION_SECONDS = 30;
+const LONG_TRANSCRIPT_MIN_DURATION_SECONDS = 30;
+const MIN_SEGMENTS_FOR_LONG_TRANSCRIPT = 2;
 
 function getSubtitlePollIntervalMs(): number {
   return readEnvPositiveInt('MUX_SUBTITLE_POLL_INTERVAL_MS') ?? DEFAULT_SUBTITLE_POLL_INTERVAL_MS;
@@ -757,6 +760,72 @@ function toTrackStatus(value: string | undefined): MuxTextTrackStatus | null {
     return normalized;
   }
   return null;
+}
+
+function toFiniteNumberOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function assertTranscriptSegmentationQuality(
+  transcript: Transcript,
+  muxAssetId: string,
+  operation: string
+): void {
+  if (transcript.segments.length === 0) {
+    throw new MuxAiError({
+      code: 'MUX_AI_INVALID_RESPONSE',
+      message: `Mux AI ${operation} returned transcript with no segments for asset ${muxAssetId}.`,
+      operatorHint:
+        'Ensure Mux transcription returns timed subtitle segments instead of an empty segment list.'
+    });
+  }
+
+  const starts = transcript.segments
+    .map((segment) => toFiniteNumberOrNull(segment.startSec))
+    .filter((value): value is number => value !== null);
+  const ends = transcript.segments
+    .map((segment) => toFiniteNumberOrNull(segment.endSec))
+    .filter((value): value is number => value !== null);
+  if (starts.length !== transcript.segments.length || ends.length !== transcript.segments.length) {
+    throw new MuxAiError({
+      code: 'MUX_AI_INVALID_RESPONSE',
+      message: `Mux AI ${operation} returned transcript with non-finite segment timing for asset ${muxAssetId}.`,
+      operatorHint:
+        'Ensure Mux transcription returns numeric start/end timing for each segment.'
+    });
+  }
+
+  const firstStart = Math.min(...starts);
+  const lastEnd = Math.max(...ends);
+  const timelineDuration = Math.max(0, lastEnd - firstStart);
+  if (
+    timelineDuration >= LONG_TRANSCRIPT_MIN_DURATION_SECONDS &&
+    transcript.segments.length < MIN_SEGMENTS_FOR_LONG_TRANSCRIPT
+  ) {
+    throw new MuxAiError({
+      code: 'MUX_AI_INVALID_RESPONSE',
+      message:
+        `Mux AI ${operation} returned transcript with insufficient segmentation quality for asset ${muxAssetId}: ` +
+        `${transcript.segments.length} segment(s) across ${timelineDuration.toFixed(3)}s.`,
+      operatorHint:
+        'Ensure Mux transcription emits granular timed segments (not a single monolithic segment).'
+    });
+  }
+
+  const longestSegmentDuration = transcript.segments.reduce((max, segment) => {
+    const duration = Math.max(0, segment.endSec - segment.startSec);
+    return Math.max(max, duration);
+  }, 0);
+  if (longestSegmentDuration > MAX_TRANSCRIPT_SEGMENT_DURATION_SECONDS) {
+    throw new MuxAiError({
+      code: 'MUX_AI_INVALID_RESPONSE',
+      message:
+        `Mux AI ${operation} returned transcript with oversized segment duration for asset ${muxAssetId}: ` +
+        `${longestSegmentDuration.toFixed(3)}s exceeds ${MAX_TRANSCRIPT_SEGMENT_DURATION_SECONDS}s.`,
+      operatorHint:
+        'Ensure Mux transcription segments are timed for subtitle readability (shorter cue durations).'
+    });
+  }
 }
 
 function languageMatches(trackLanguage: string | undefined, preferredLanguage: string | null): boolean {
@@ -1279,11 +1348,13 @@ async function transcribeWithPrimitiveFetch(
     getTranscriptLanguageFromAsset(asset) ??
     'en';
 
-  return {
+  const transcript = {
     language,
     text,
     segments
   };
+  assertTranscriptSegmentationQuality(transcript, muxAssetId, 'primitives transcription fetch');
+  return transcript;
 }
 
 export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcript> {
@@ -1295,13 +1366,15 @@ export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcrip
     'transcriptFromAsset'
   ];
   if (getFunction(primitives, primitiveTranscribeCandidates)) {
-    return callMuxFn({
+    const transcript = await callMuxFn({
       moduleRef: primitives,
       operation: 'primitives transcription',
       candidates: primitiveTranscribeCandidates,
       args: [muxAssetId],
       parser: isTranscript
     });
+    assertTranscriptSegmentationQuality(transcript, muxAssetId, 'primitives transcription');
+    return transcript;
   }
 
   return transcribeWithPrimitiveFetch(primitives, muxAssetId);

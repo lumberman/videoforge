@@ -239,6 +239,47 @@ test('mux adapter throws structured invalid-response error when mux functions re
   );
 });
 
+test('mux adapter rejects monolithic long transcript segments from primitives transcription', async () => {
+  await withEnv(
+    {
+      MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+      MUX_TOKEN_ID: undefined,
+      MUX_TOKEN_SECRET: undefined
+    },
+    async () => {
+      const muxAiModule = await import('../src/services/mux-ai');
+      muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
+        if (moduleName === '@mux/ai/primitives') {
+          return {
+            async transcribe() {
+              return {
+                language: 'ru',
+                text: 'single long transcript',
+                segments: [{ startSec: 0, endSec: 86, text: 'single long transcript' }]
+              };
+            }
+          };
+        }
+        return {};
+      });
+
+      try {
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-monolithic-transcript'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_INVALID_RESPONSE');
+            assert.match(error.message, /insufficient segmentation quality/i);
+            return true;
+          }
+        );
+      } finally {
+        muxAiModule.setMuxAiModuleImporterForTests();
+      }
+    }
+  );
+});
+
 test('translation service deduplicates languages while using mux adapter boundary', async () => {
   await withEnv(
     {

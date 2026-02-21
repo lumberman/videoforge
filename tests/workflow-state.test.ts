@@ -145,6 +145,70 @@ test('workflow does not retry deterministic mux invalid-response failures', asyn
   });
 });
 
+test('workflow fails transcription when mux returns monolithic long transcript segment', async () => {
+  await withTempDataEnv('workflow-mux-monolithic-transcript', async () => {
+    await withEnv(
+      {
+        MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
+        MUX_TOKEN_ID: undefined,
+        MUX_TOKEN_SECRET: undefined
+      },
+      async () => {
+        const muxAi = await import('../src/services/mux-ai');
+        muxAi.setMuxAiModuleImporterForTests(async (moduleName) => {
+          if (moduleName === '@mux/ai/primitives') {
+            return {
+              async transcribe() {
+                return {
+                  language: 'ru',
+                  text: 'single long transcript',
+                  segments: [{ startSec: 0, endSec: 86, text: 'single long transcript' }]
+                };
+              }
+            };
+          }
+
+          return {};
+        });
+
+        try {
+          const jobStore = await importFresh<typeof import('../src/data/job-store')>(
+            '../src/data/job-store'
+          );
+          const workflow = await importFresh<
+            typeof import('../src/workflows/videoEnrichment')
+          >('../src/workflows/videoEnrichment');
+
+          const job = await jobStore.createJob({
+            muxAssetId: 'asset-monolithic-mux-transcript',
+            languages: ['es'],
+            options: {
+              generateVoiceover: false,
+              uploadMux: false,
+              notifyCms: false
+            }
+          });
+
+          await workflow.startVideoEnrichment(job.id);
+
+          const failed = await jobStore.getJobById(job.id);
+          assert.ok(failed);
+          assert.equal(failed.status, 'failed');
+          assert.equal(failed.currentStep, 'transcription');
+          assert.equal(failed.retries, 0);
+
+          const latestError = failed.errors.at(-1);
+          assert.ok(latestError);
+          assert.equal(latestError.code, 'MUX_AI_INVALID_RESPONSE');
+          assert.match(latestError.message, /insufficient segmentation quality/i);
+        } finally {
+          muxAi.setMuxAiModuleImporterForTests();
+        }
+      }
+    );
+  });
+});
+
 test('job-store increments retries and stores errors deterministically', async () => {
   await withTempDataEnv('workflow-retries', async () => {
     const jobStore = await importFresh<typeof import('../src/data/job-store')>(
