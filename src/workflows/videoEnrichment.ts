@@ -16,7 +16,7 @@ import {
   storeJsonArtifact,
   storeTextArtifact
 } from '@/services/storage';
-import { isAllowedLanguage } from '@/config/subtitle-post-process';
+import { getSubtitlePostProcessAllowlist, isAllowedLanguage } from '@/config/subtitle-post-process';
 import { isMuxAiError } from '@/services/mux-ai';
 import { fetchTranscriptForAsset } from '@/services/mux-data-adapter';
 import { runSubtitlePostProcess } from '@/services/subtitle-post-process';
@@ -64,37 +64,6 @@ function isRetryableStepError(error: unknown): boolean {
     error.code === 'MUX_AI_INVALID_RESPONSE' ||
     isDeterministicOperationMismatch
   );
-}
-
-function toVtt(transcript: Transcript): string {
-  const lines = ['WEBVTT', ''];
-
-  for (const segment of transcript.segments) {
-    const start = toVttTimestamp(segment.startSec);
-    const end = toVttTimestamp(segment.endSec);
-    lines.push(`${start} --> ${end}`);
-    lines.push(segment.text);
-    lines.push('');
-  }
-
-  return `${lines.join('\n')}\n`;
-}
-
-function toVttTimestamp(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600)
-    .toString()
-    .padStart(2, '0');
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-    .toString()
-    .padStart(2, '0');
-  const seconds = Math.floor(totalSeconds % 60)
-    .toString()
-    .padStart(2, '0');
-  const milliseconds = Math.floor((totalSeconds % 1) * 1000)
-    .toString()
-    .padStart(3, '0');
-
-  return `${hours}:${minutes}:${seconds}.${milliseconds}`;
 }
 
 interface SubtitleProcessArtifact {
@@ -176,7 +145,6 @@ async function runSubtitlePostProcessStep(opts: {
   }
 
   const artifacts: SubtitleProcessArtifact[] = [];
-  let primaryVttUrl: string | undefined;
 
   for (const track of tracks) {
     if (!isAllowedLanguage(track.language)) {
@@ -273,27 +241,22 @@ async function runSubtitlePostProcessStep(opts: {
       }
     });
 
-    if (!primaryVttUrl || track.language === opts.transcript.language) {
-      primaryVttUrl = vttUrl;
-    }
   }
 
-  if (!primaryVttUrl) {
-    primaryVttUrl = await storeTextArtifact(
-      opts.jobId,
-      'subtitles.vtt',
-      toVtt(opts.transcript)
+  if (artifacts.length === 0) {
+    const allowlist = Array.from(getSubtitlePostProcessAllowlist()).join(', ');
+    throw new Error(
+      `Subtitle post-process produced no eligible tracks. Check SUBTITLE_POST_PROCESS_ALLOWLIST (${allowlist || 'empty'}).`
     );
-  } else {
-    const primaryTrack = artifacts.find((item) => item.vttUrl === primaryVttUrl);
-    if (primaryTrack) {
-      primaryVttUrl = await storeTextArtifact(
-        opts.jobId,
-        'subtitles.vtt',
-        primaryTrack.output.vtt
-      );
-    }
   }
+
+  const primaryTrack =
+    artifacts.find((item) => item.language === opts.transcript.language) ?? artifacts[0];
+  const primaryVttUrl = await storeTextArtifact(
+    opts.jobId,
+    'subtitles.vtt',
+    primaryTrack.output.vtt
+  );
 
   const manifestUrl = await storeJsonArtifact(opts.jobId, 'subtitle-post-process-manifest.json', {
     generatedAt: new Date().toISOString(),
@@ -326,10 +289,13 @@ async function runStep<T>(opts: {
   world: WorkflowWorld;
   maxRetries?: number;
   skip?: boolean;
+  skipReason?: string;
   task: () => Promise<T>;
 }): Promise<T | undefined> {
   if (opts.skip) {
-    await updateStepStatus(opts.jobId, opts.step, 'skipped');
+    await updateStepStatus(opts.jobId, opts.step, 'skipped', {
+      error: opts.skipReason ?? 'Step skipped by workflow conditions.'
+    });
     await opts.world.onStepUpdate(opts.jobId, opts.step, 'skipped');
     return undefined;
   }
@@ -407,18 +373,19 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
         );
       }
     }
+    const primitiveVtt = primitivePreprocess.vtt?.trim();
+    if (!primitiveVtt) {
+      throw new Error(
+        'Mux primitives preprocessing did not return structured transcript VTT.'
+      );
+    }
 
     const transcriptUrl = await storeJsonArtifact(jobId, 'transcript.json', transcript);
     let vttUrl = await runStep({
       jobId,
       step: 'structured_transcript',
       world,
-      task: async () =>
-        storeTextArtifact(
-          jobId,
-          'subtitles.vtt',
-          primitivePreprocess.vtt ?? toVtt(transcript)
-        )
+      task: async () => storeTextArtifact(jobId, 'subtitles.vtt', primitiveVtt)
     });
 
     const chapters = await runStep({
@@ -447,6 +414,7 @@ export async function startVideoEnrichment(jobId: string): Promise<void> {
       step: 'translation',
       world,
       skip: job.languages.length === 0,
+      skipReason: 'No target languages requested for translation.',
       task: async () => translateTranscript(job.muxAssetId, transcript, job.languages)
     });
 
@@ -603,49 +571,51 @@ async function uploadAllArtifacts(
   }
 
   if (payload.subtitlePostProcess) {
-    urls.subtitlePostProcessManifest = payload.subtitlePostProcess.manifestUrl;
-    const byLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
-      (acc, track) => {
-        acc[track.language] = track.vttUrl;
+    if (payload.subtitlePostProcess.tracks.length > 0) {
+      urls.subtitlePostProcessManifest = payload.subtitlePostProcess.manifestUrl;
+      const byLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
+        (acc, track) => {
+          acc[track.language] = track.vttUrl;
+          return acc;
+        },
+        {}
+      );
+      const theologyByLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
+        (acc, track) => {
+          acc[track.language] = track.theologyIssuesUrl;
+          return acc;
+        },
+        {}
+      );
+      const languageDeltasByLanguage = payload.subtitlePostProcess.tracks.reduce<
+        Record<string, string>
+      >((acc, track) => {
+        acc[track.language] = track.languageQualityDeltasUrl;
         return acc;
-      },
-      {}
-    );
-    const theologyByLanguage = payload.subtitlePostProcess.tracks.reduce<Record<string, string>>(
-      (acc, track) => {
-        acc[track.language] = track.theologyIssuesUrl;
-        return acc;
-      },
-      {}
-    );
-    const languageDeltasByLanguage = payload.subtitlePostProcess.tracks.reduce<
-      Record<string, string>
-    >((acc, track) => {
-      acc[track.language] = track.languageQualityDeltasUrl;
-      return acc;
-    }, {});
+      }, {});
 
-    urls.subtitlesByLanguage = await storeJsonArtifact(
-      jobId,
-      'subtitles-by-language.json',
-      byLanguage
-    );
-    urls.subtitleTheologyByLanguage = await storeJsonArtifact(
-      jobId,
-      'subtitle-theology-by-language.json',
-      theologyByLanguage
-    );
-    urls.subtitleLanguageDeltasByLanguage = await storeJsonArtifact(
-      jobId,
-      'subtitle-language-deltas-by-language.json',
-      languageDeltasByLanguage
-    );
+      urls.subtitlesByLanguage = await storeJsonArtifact(
+        jobId,
+        'subtitles-by-language.json',
+        byLanguage
+      );
+      urls.subtitleTheologyByLanguage = await storeJsonArtifact(
+        jobId,
+        'subtitle-theology-by-language.json',
+        theologyByLanguage
+      );
+      urls.subtitleLanguageDeltasByLanguage = await storeJsonArtifact(
+        jobId,
+        'subtitle-language-deltas-by-language.json',
+        languageDeltasByLanguage
+      );
 
-    urls.subtitleTrackMetadata = await storeJsonArtifact(
-      jobId,
-      'subtitle-track-metadata.json',
-      payload.subtitlePostProcess.tracks.map((track) => track.attachMetadata)
-    );
+      urls.subtitleTrackMetadata = await storeJsonArtifact(
+        jobId,
+        'subtitle-track-metadata.json',
+        payload.subtitlePostProcess.tracks.map((track) => track.attachMetadata)
+      );
+    }
   }
 
   if (payload.voiceoverUrl) {

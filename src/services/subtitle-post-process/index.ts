@@ -5,7 +5,6 @@ import {
   SUBTITLE_POST_PROCESS_VERSIONS,
   SUBTITLE_PROFILES
 } from '@/config/subtitle-post-process';
-import { buildFallbackCues } from '@/services/subtitle-post-process/fallback-formatter';
 import { classifyLanguage } from '@/services/subtitle-post-process/language-classifier';
 import { runLanguageQualityPass } from '@/services/subtitle-post-process/language-quality-pass';
 import { runTheologyPass } from '@/services/subtitle-post-process/theology-pass';
@@ -283,22 +282,9 @@ export async function runSubtitlePostProcess(
   }
 
   if (validation.errors.length > 0) {
-    usedFallback = true;
-    const fallbackCues = buildFallbackCues(input.segments, profile);
-    const fallbackVtt = renderWebVtt(fallbackCues);
-    const fallbackValidation = validateWebVtt(fallbackVtt, profile);
-
-    if (fallbackValidation.errors.length > 0) {
-      throw new Error(
-        `Subtitle post-process validation failed after retry and fallback: ${JSON.stringify(
-          fallbackValidation.errors
-        )}`
-      );
-    }
-
-    candidateCues = fallbackCues;
-    candidateVtt = fallbackVtt;
-    validation = fallbackValidation;
+    throw new Error(
+      `Subtitle post-process validation failed after retry: ${JSON.stringify(validation.errors)}`
+    );
   }
 
   const subtitleOriginAfter = 'ai-processed';

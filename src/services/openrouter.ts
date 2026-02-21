@@ -6,7 +6,6 @@ import type {
   TranslationResult
 } from '@/types/enrichment';
 import {
-  hasOpenRouterApiKey,
   OPENROUTER_SUBTITLE_MODELS,
   OPENROUTER_SUBTITLE_SETTINGS
 } from '@/config/openrouter-models';
@@ -352,6 +351,15 @@ class LiveOpenRouterAdapter extends MockOpenRouterAdapter {
   }
 }
 
-export const openRouter: OpenRouterAdapter = hasOpenRouterApiKey()
-  ? new LiveOpenRouterAdapter()
-  : new MockOpenRouterAdapter();
+function isAutomatedTestRuntime(): boolean {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    typeof process.env.NODE_TEST_CONTEXT === 'string' ||
+    process.env.VITEST === 'true' ||
+    typeof process.env.JEST_WORKER_ID === 'string' ||
+    process.argv.includes('--test')
+  );
+}
+
+export const openRouter: OpenRouterAdapter =
+  isAutomatedTestRuntime() ? new MockOpenRouterAdapter() : new LiveOpenRouterAdapter();

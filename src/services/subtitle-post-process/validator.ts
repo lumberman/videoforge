@@ -6,7 +6,7 @@ import type {
 } from '@/services/subtitle-post-process/types';
 import { parseWebVtt } from '@/services/subtitle-post-process/vtt';
 
-const EPSILON = 1e-6;
+const EPSILON = 1e-3;
 
 function stripMarkup(text: string): string {
   return text.replace(/<[^>]*>/g, '');

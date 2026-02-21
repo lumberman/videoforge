@@ -176,8 +176,8 @@ test('runSubtitlePostProcess retry can recover without fallback', async () => {
   });
 });
 
-test('runSubtitlePostProcess uses deterministic fallback when retry remains invalid', async () => {
-  await withTempDataEnv('subtitle-process-retry-then-fallback', async () => {
+test('runSubtitlePostProcess fails when validation remains invalid after retry', async () => {
+  await withTempDataEnv('subtitle-process-retry-fails', async () => {
     const originalTheology = openRouter.subtitleTheologyCheck;
     const originalLanguage = openRouter.subtitleLanguageQualityPass;
 
@@ -190,17 +190,16 @@ test('runSubtitlePostProcess uses deterministic fallback when retry remains inva
     });
 
     try {
-      const output = await runSubtitlePostProcess({
-        assetId: 'asset-retry-fallback',
-        bcp47: 'en',
-        subtitleOrigin: 'ai-raw',
-        segments: [{ id: '1', start: 0, end: 6, text: 'seed text' }]
-      });
-
-      assert.equal(output.aiRetryCount, 1);
-      assert.equal(output.usedFallback, true);
-      assert.equal(output.validationErrors.length, 0);
-      assert.match(output.vtt, /^WEBVTT/m);
+      await assert.rejects(
+        () =>
+          runSubtitlePostProcess({
+            assetId: 'asset-retry-fails',
+            bcp47: 'en',
+            subtitleOrigin: 'ai-raw',
+            segments: [{ id: '1', start: 0, end: 6, text: 'seed text' }]
+          }),
+        /validation failed after retry/i
+      );
     } finally {
       openRouter.subtitleTheologyCheck = originalTheology;
       openRouter.subtitleLanguageQualityPass = originalLanguage;
@@ -208,8 +207,8 @@ test('runSubtitlePostProcess uses deterministic fallback when retry remains inva
   });
 });
 
-test('runSubtitlePostProcess hard-fails when fallback is also invalid', async () => {
-  await withTempDataEnv('subtitle-process-fallback-invalid', async () => {
+test('runSubtitlePostProcess fails when validation remains invalid after retry (markup case)', async () => {
+  await withTempDataEnv('subtitle-process-retry-invalid-markup', async () => {
     const originalTheology = openRouter.subtitleTheologyCheck;
     const originalLanguage = openRouter.subtitleLanguageQualityPass;
 
@@ -225,12 +224,12 @@ test('runSubtitlePostProcess hard-fails when fallback is also invalid', async ()
       await assert.rejects(
         () =>
           runSubtitlePostProcess({
-            assetId: 'asset-fallback-invalid',
+            assetId: 'asset-retry-invalid-markup',
             bcp47: 'en',
             subtitleOrigin: 'ai-raw',
             segments: [{ id: '1', start: 0, end: 3, text: '<b>Grace</b> and peace' }]
           }),
-        /validation failed after retry and fallback/i
+        /validation failed after retry/i
       );
     } finally {
       openRouter.subtitleTheologyCheck = originalTheology;
@@ -246,9 +245,9 @@ test('runSubtitlePostProcess keeps non-speech tokens as standalone cues during r
       bcp47: 'en',
       subtitleOrigin: 'ai-raw',
       segments: [
-        { id: '1', start: 0, end: 1.0, text: 'Grace and peace.' },
-        { id: '2', start: 1.1, end: 1.8, text: '[Music]' },
-        { id: '3', start: 1.9, end: 3.1, text: 'Be with you all.' }
+        { id: '1', start: 0, end: 1.6, text: 'Grace and peace.' },
+        { id: '2', start: 1.7, end: 3.2, text: '[Music]' },
+        { id: '3', start: 3.3, end: 5.0, text: 'Be with you all.' }
       ]
     });
 

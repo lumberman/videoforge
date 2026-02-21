@@ -264,3 +264,45 @@ test('workflow allowlist gate processes only allowed subtitle languages', async 
     });
   });
 });
+
+test('workflow fails when subtitle post-process has no eligible tracks', async () => {
+  await withTempDataEnv('workflow-subtitle-allowlist-none', async () => {
+    await withEnv({ SUBTITLE_POST_PROCESS_ALLOWLIST: 'zz' }, async () => {
+      await withMockMuxAi(async () => {
+        const jobStore = await importFresh<typeof import('../src/data/job-store')>(
+          '../src/data/job-store'
+        );
+        const workflow = await importFresh<typeof import('../src/workflows/videoEnrichment')>(
+          '../src/workflows/videoEnrichment'
+        );
+
+        const job = await jobStore.createJob({
+          muxAssetId: 'asset-subtitle-allowlist-none',
+          languages: ['es', 'fr'],
+          options: {
+            generateVoiceover: false,
+            uploadMux: false,
+            notifyCms: false
+          }
+        });
+
+        await workflow.startVideoEnrichment(job.id);
+        const completed = await jobStore.getJobById(job.id);
+        assert.ok(completed);
+        assert.equal(completed.status, 'failed');
+        const subtitleStep = completed.steps.find((step) => step.name === 'subtitle_post_process');
+        assert.ok(subtitleStep);
+        assert.equal(subtitleStep.status, 'failed');
+        assert.match(
+          subtitleStep.error ?? '',
+          /Subtitle post-process produced no eligible tracks/i
+        );
+        assert.equal(typeof completed.artifacts.subtitlePostProcessManifest, 'undefined');
+        assert.equal(typeof completed.artifacts.subtitlesByLanguage, 'undefined');
+        assert.equal(typeof completed.artifacts.subtitleTheologyByLanguage, 'undefined');
+        assert.equal(typeof completed.artifacts.subtitleLanguageDeltasByLanguage, 'undefined');
+        assert.equal(typeof completed.artifacts.subtitleTrackMetadata, 'undefined');
+      });
+    });
+  });
+});

@@ -13,8 +13,8 @@ export function createMockMuxImporter() {
             language: 'en',
             text: `Mock transcript for ${muxAssetId}`,
             segments: [
-              { startSec: 0, endSec: 10, text: `Intro ${muxAssetId}` },
-              { startSec: 10, endSec: 20, text: 'Body' }
+              { startSec: 0, endSec: 4.9, text: `Intro ${muxAssetId}` },
+              { startSec: 5.4, endSec: 9.9, text: 'Body' }
             ]
           };
         },
@@ -56,7 +56,11 @@ export function createMockMuxImporter() {
       async translateTranscript(transcript: { text: string }, targetLanguage: string) {
         return {
           language: targetLanguage,
-          text: `[${targetLanguage}] ${transcript.text}`
+          text: `[${targetLanguage}] ${transcript.text}`,
+          segments: [
+            { startSec: 0, endSec: 2.7, text: `[${targetLanguage}] Intro` },
+            { startSec: 3.1, endSec: 5.8, text: `[${targetLanguage}] Body` }
+          ]
         };
       }
     };

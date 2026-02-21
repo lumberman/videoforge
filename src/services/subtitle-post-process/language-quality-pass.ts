@@ -21,13 +21,6 @@ function normalizeCueText(text: string): string {
   return output;
 }
 
-function applyDeterministicNormalization(cues: SubtitleCue[]): SubtitleCue[] {
-  return cues.map((cue) => ({
-    ...cue,
-    text: isNonSpeechTokenText(cue.text) ? cue.text.trim() : normalizeCueText(cue.text)
-  }));
-}
-
 function buildFullTranscript(cues: SubtitleCue[]): string {
   return cues.map((cue) => cue.text.trim()).filter(Boolean).join(' ');
 }
@@ -53,56 +46,45 @@ export async function runLanguageQualityPass(input: {
       ];
     });
 
-  try {
-    const response = await openRouter.subtitleLanguageQualityPass({
-      assetId: input.assetId,
-      bcp47: input.bcp47,
-      promptVersion: SUBTITLE_POST_PROCESS_VERSIONS.promptVersion,
-      fullTranscript: buildFullTranscript(input.cues),
-      cues: input.cues.map((cue) => ({
-        index: cue.index,
-        start: cue.start,
-        end: cue.end,
-        text: cue.text
-      }))
-    });
+  const response = await openRouter.subtitleLanguageQualityPass({
+    assetId: input.assetId,
+    bcp47: input.bcp47,
+    promptVersion: SUBTITLE_POST_PROCESS_VERSIONS.promptVersion,
+    fullTranscript: buildFullTranscript(input.cues),
+    cues: input.cues.map((cue) => ({
+      index: cue.index,
+      start: cue.start,
+      end: cue.end,
+      text: cue.text
+    }))
+  });
 
-    if (!Array.isArray(response.cues)) {
-      const cues = applyDeterministicNormalization(input.cues);
-      return { cues, deltas: buildDeltas(cues) };
-    }
-
-    const edits = new Map<number, string>();
-    for (const item of response.cues) {
-      if (!item || typeof item !== 'object') {
-        continue;
-      }
-
-      const index = Number((item as { index?: unknown }).index);
-      const text = (item as { text?: unknown }).text;
-      if (!Number.isInteger(index) || typeof text !== 'string') {
-        continue;
-      }
-
-      if (isNonSpeechTokenText(input.cues[index]?.text ?? '')) {
-        continue;
-      }
-
-      edits.set(index, normalizeCueText(text));
-    }
-
-    const cues = input.cues.map((cue) => ({
-      ...cue,
-      text: edits.get(cue.index) ?? normalizeCueText(cue.text)
-    }));
-    return { cues, deltas: buildDeltas(cues) };
-  } catch (error) {
-    console.warn(
-      `[subtitle-post-process][language-pass] external model unavailable, using deterministic fallback: ${
-        error instanceof Error ? error.message : 'unknown error'
-      }`
-    );
-    const cues = applyDeterministicNormalization(input.cues);
-    return { cues, deltas: buildDeltas(cues) };
+  if (!Array.isArray(response.cues)) {
+    throw new Error('Language-quality pass returned an invalid cues payload.');
   }
+
+  const edits = new Map<number, string>();
+  for (const item of response.cues) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+
+    const index = Number((item as { index?: unknown }).index);
+    const text = (item as { text?: unknown }).text;
+    if (!Number.isInteger(index) || typeof text !== 'string') {
+      continue;
+    }
+
+    if (isNonSpeechTokenText(input.cues[index]?.text ?? '')) {
+      continue;
+    }
+
+    edits.set(index, normalizeCueText(text));
+  }
+
+  const cues = input.cues.map((cue) => ({
+    ...cue,
+    text: edits.get(cue.index) ?? normalizeCueText(cue.text)
+  }));
+  return { cues, deltas: buildDeltas(cues) };
 }

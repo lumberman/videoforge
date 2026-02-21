@@ -349,7 +349,7 @@ test('mux adapter resolves numeric language IDs to ISO codes before caption tran
   );
 });
 
-test('mux primitives preprocessing is non-fatal and returns warnings', async () => {
+test('mux primitives preprocessing fails when mux runtime credentials are missing', async () => {
   await withEnv(
     {
       MUX_AI_WORKFLOW_SECRET_KEY: undefined,
@@ -358,15 +358,19 @@ test('mux primitives preprocessing is non-fatal and returns warnings', async () 
     },
     async () => {
       const muxAiModule = await import('../src/services/mux-ai');
-      const artifacts = await muxAiModule.preprocessMuxAssetWithPrimitives('mux-asset-456');
-      assert.equal(typeof artifacts, 'object');
-      assert.ok(Array.isArray(artifacts.warnings));
-      assert.equal(artifacts.warnings[0]?.code, 'MUX_AI_CONFIG_MISSING');
+      await assert.rejects(
+        () => muxAiModule.preprocessMuxAssetWithPrimitives('mux-asset-456'),
+        (error) => {
+          assert.ok(muxAiModule.isMuxAiError(error));
+          assert.equal(error.code, 'MUX_AI_CONFIG_MISSING');
+          return true;
+        }
+      );
     }
   );
 });
 
-test('mux adapter silently falls back to workflow when legacy primitives transcription shape is incompatible', async () => {
+test('mux adapter fails when primitives transcription returns incompatible shape', async () => {
   await withEnv(
     {
       MUX_AI_WORKFLOW_SECRET_KEY: 'test-workflow-secret',
@@ -375,12 +379,6 @@ test('mux adapter silently falls back to workflow when legacy primitives transcr
     },
     async () => {
       const muxAiModule = await import('../src/services/mux-ai');
-      const warnings: string[] = [];
-      const originalWarn = console.warn;
-      console.warn = (...args: unknown[]) => {
-        warnings.push(args.map((value) => String(value)).join(' '));
-      };
-
       muxAiModule.setMuxAiModuleImporterForTests(async (moduleName) => {
         if (moduleName === '@mux/ai/primitives') {
           return {
@@ -402,14 +400,15 @@ test('mux adapter silently falls back to workflow when legacy primitives transcr
       });
 
       try {
-        const transcript = await muxAiModule.transcribeWithMuxAi('mux-asset-fallback-warning');
-        assert.equal(transcript.language, 'en');
-        assert.equal(
-          warnings.some((line) => line.includes('[mux-ai][optional-fallback]')),
-          false
+        await assert.rejects(
+          () => muxAiModule.transcribeWithMuxAi('mux-asset-fallback-warning'),
+          (error) => {
+            assert.ok(muxAiModule.isMuxAiError(error));
+            assert.equal(error.code, 'MUX_AI_INVALID_RESPONSE');
+            return true;
+          }
         );
       } finally {
-        console.warn = originalWarn;
         muxAiModule.setMuxAiModuleImporterForTests();
       }
     }

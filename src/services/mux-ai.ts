@@ -6,6 +6,7 @@ import type {
   TranscriptSegment,
   TranslationResult
 } from '@/types/enrichment';
+import { parseWebVtt } from '@/services/subtitle-post-process/vtt';
 
 type UnknownModule = Record<string, unknown>;
 type UnknownFn = (...args: unknown[]) => Promise<unknown> | unknown;
@@ -334,19 +335,6 @@ function canFallbackFromOptionalError(error: MuxAiError): boolean {
   return isMissingExportError(error) || error.code === 'MUX_AI_INVALID_RESPONSE';
 }
 
-function isFatalPrimitiveTranscriptQualityError(error: MuxAiError): boolean {
-  if (error.code !== 'MUX_AI_OPERATION_FAILED') {
-    return false;
-  }
-
-  return (
-    /parseVTTCues export is required/i.test(error.message) ||
-    /parseVTTCues threw an exception/i.test(error.message) ||
-    /parseVTTCues returned an invalid cue array/i.test(error.message) ||
-    /parseVTTCues returned no transcript cues/i.test(error.message)
-  );
-}
-
 async function callMuxFn<T>(opts: {
   moduleRef: UnknownModule;
   operation: string;
@@ -439,14 +427,6 @@ async function tryOptionalMuxFnWithFallbackArgs<T>(opts: {
     parser: opts.parser,
     swallowAllErrors: opts.swallowAllErrors
   });
-}
-
-function toPreprocessWarning(error: MuxAiError): MuxAiPreprocessWarning {
-  return {
-    code: error.code,
-    message: error.message,
-    operatorHint: error.operatorHint
-  };
 }
 
 type MuxAssetRecord = {
@@ -580,6 +560,17 @@ function toPlainTextFromVtt(vtt: string): string {
     )
     .join(' ')
     .trim();
+}
+
+function translationSegmentsFromVtt(vtt: string): TranscriptSegment[] {
+  const parsed = parseWebVtt(vtt);
+  return parsed.cues
+    .map((cue) => ({
+      startSec: cue.start,
+      endSec: Math.max(cue.end, cue.start + 0.001),
+      text: normalizeCueText(cue.text)
+    }))
+    .filter((segment) => segment.text.length > 0);
 }
 
 function normalizeCueText(value: string): string {
@@ -1197,10 +1188,13 @@ async function resolveLanguageCode(value: string): Promise<string> {
 async function transcribeWithPrimitiveFetch(
   primitives: UnknownModule,
   muxAssetId: string
-): Promise<Transcript | undefined> {
+): Promise<Transcript> {
   const fetchTranscriptForAsset = getFunction(primitives, ['fetchTranscriptForAsset']);
   if (!fetchTranscriptForAsset) {
-    return undefined;
+    throw toOperationFailed(
+      'primitives transcription',
+      `fetchTranscriptForAsset export is required to preserve transcript segmentation for asset ${muxAssetId}`
+    );
   }
 
   let asset = await fetchMuxAsset(muxAssetId);
@@ -1294,89 +1288,37 @@ async function transcribeWithPrimitiveFetch(
 
 export async function transcribeWithMuxAi(muxAssetId: string): Promise<Transcript> {
   const primitives = await importMuxModule('@mux/ai/primitives', 'primitives');
-  const primitiveTranscript = await tryOptionalMuxFn({
-    moduleRef: primitives,
-    operation: 'primitives transcription',
-    candidates: ['transcribe', 'createTranscript', 'generateTranscript', 'transcriptFromAsset'],
-    args: [muxAssetId],
-    parser: isTranscript,
-    swallowAllErrors: true
-  });
-  if (primitiveTranscript) {
-    return primitiveTranscript;
+  const primitiveTranscribeCandidates = [
+    'transcribe',
+    'createTranscript',
+    'generateTranscript',
+    'transcriptFromAsset'
+  ];
+  if (getFunction(primitives, primitiveTranscribeCandidates)) {
+    return callMuxFn({
+      moduleRef: primitives,
+      operation: 'primitives transcription',
+      candidates: primitiveTranscribeCandidates,
+      args: [muxAssetId],
+      parser: isTranscript
+    });
   }
 
-  let primitiveFetchError: MuxAiError | undefined;
-  let primitiveFetchTranscript: Transcript | undefined;
-  try {
-    primitiveFetchTranscript = await transcribeWithPrimitiveFetch(primitives, muxAssetId);
-  } catch (error) {
-    if (isMuxAiError(error)) {
-      primitiveFetchError = error;
-      console.warn(
-        `[mux-ai][optional-fallback] operation="primitives transcription fetch" code="${error.code}" message="${error.message}"`
-      );
-      if (isFatalPrimitiveTranscriptQualityError(error)) {
-        throw error;
-      }
-    } else {
-      throw error;
-    }
-  }
-  if (primitiveFetchTranscript) {
-    return primitiveFetchTranscript;
-  }
-
-  const workflows = await importMuxModule('@mux/ai/workflows', 'workflows');
-  const workflowCandidates = ['transcribe', 'transcriptionWorkflow', 'runTranscriptionWorkflow'];
-  const hasWorkflowTranscription = Boolean(getFunction(workflows, workflowCandidates));
-  if (!hasWorkflowTranscription) {
-    if (primitiveFetchError) {
-      throw primitiveFetchError;
-    }
-    throw toOperationFailed(
-      'transcription',
-      `No supported transcription export found in @mux/ai/primitives or @mux/ai/workflows. Tried workflows exports [${workflowCandidates.join(', ')}].`
-    );
-  }
-
-  return callMuxFn({
-    moduleRef: workflows,
-    operation: 'workflow transcription',
-    candidates: workflowCandidates,
-    args: [muxAssetId],
-    parser: isTranscript
-  });
+  return transcribeWithPrimitiveFetch(primitives, muxAssetId);
 }
 
 export async function preprocessMuxAssetWithPrimitives(
   muxAssetId: string,
   transcript?: Transcript
 ): Promise<MuxAiPreprocessResult> {
-  const warnings: MuxAiPreprocessWarning[] = [];
+  const primitives = await importMuxModule('@mux/ai/primitives', 'primitives');
 
-  let primitives: UnknownModule;
-  try {
-    primitives = await importMuxModule('@mux/ai/primitives', 'primitives');
-  } catch (error) {
-    if (isMuxAiError(error)) {
-      console.warn(
-        `[mux-ai][optional-fallback] operation="primitives preprocessing" code="${error.code}" message="${error.message}"`
-      );
-      warnings.push(toPreprocessWarning(error));
-      return { warnings };
-    }
-    throw error;
-  }
-
-  const vtt = await tryOptionalMuxFnWithFallbackArgs({
+  const vtt = await callMuxFn({
     moduleRef: primitives,
     operation: 'VTT generation',
     candidates: ['toVtt', 'generateVtt', 'createVtt', 'vttFromTranscript'],
-    primaryArgs: transcript ? [transcript] : [muxAssetId],
-    fallbackArgs: [muxAssetId],
-    parser: isNonEmptyString,
-    swallowAllErrors: true
+    args: transcript ? [transcript] : [muxAssetId],
+    parser: isNonEmptyString
   });
 
   const storyboard = await tryOptionalMuxFn({
@@ -1384,8 +1326,7 @@ export async function preprocessMuxAssetWithPrimitives(
     operation: 'storyboard generation',
     candidates: ['createStoryboard', 'generateStoryboard', 'storyboardFromAsset'],
     args: [muxAssetId],
-    parser: isJsonLike,
-    swallowAllErrors: true
+    parser: isJsonLike
   });
 
   const chunks = await tryOptionalMuxFnWithFallbackArgs({
@@ -1394,11 +1335,10 @@ export async function preprocessMuxAssetWithPrimitives(
     candidates: ['chunkTranscript', 'generateChunks', 'chunksFromTranscript'],
     primaryArgs: transcript ? [transcript] : [muxAssetId],
     fallbackArgs: [muxAssetId],
-    parser: (value): value is unknown[] => Array.isArray(value),
-    swallowAllErrors: true
+    parser: (value): value is unknown[] => Array.isArray(value)
   });
 
-  return { vtt, storyboard, chunks, warnings };
+  return { vtt, storyboard, chunks, warnings: [] };
 }
 
 export async function chaptersWithMuxAi(
@@ -1499,9 +1439,18 @@ export async function translateWithMuxAi(
     parser: isWorkflowCaptionTranslationResult
   });
   if (workflowTranslation) {
+    const segments = translationSegmentsFromVtt(workflowTranslation.translatedVtt);
+    if (segments.length === 0) {
+      throw toOperationFailed(
+        'workflow caption translation',
+        'translateCaptions returned translatedVtt without subtitle cues'
+      );
+    }
+
     return {
       language: targetLanguage,
-      text: toPlainTextFromVtt(workflowTranslation.translatedVtt)
+      text: toPlainTextFromVtt(workflowTranslation.translatedVtt),
+      segments
     };
   }
 
